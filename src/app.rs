@@ -272,27 +272,29 @@ impl WdidApp {
         let viewport_info = ctx.input(|i| i.viewport().clone());
 
         // Get current window dimensions
-        let current_state = if let Some(inner_rect) = viewport_info.inner_rect {
-            let (width, height) = (inner_rect.width(), inner_rect.height());
-
-            // Only save position on X11 (WAYLAND_DISPLAY not set)
-            let (x, y) = if std::env::var("WAYLAND_DISPLAY").is_err() {
-                viewport_info
-                    .outer_rect
-                    .map(|r| (Some(r.min.x), Some(r.min.y)))
-                    .unwrap_or((None, None))
-            } else {
-                (None, None)
-            };
-
-            WindowState {
-                width: Some(width),
-                height: Some(height),
-                x,
-                y,
-            }
+        // inner_rect is None on Wayland, use screen_rect as fallback
+        let (width, height) = if let Some(inner_rect) = viewport_info.inner_rect {
+            (inner_rect.width(), inner_rect.height())
         } else {
-            return; // No viewport info available yet
+            let screen = ctx.screen_rect();
+            (screen.width(), screen.height())
+        };
+
+        // Only save position on X11 (WAYLAND_DISPLAY not set)
+        let (x, y) = if std::env::var("WAYLAND_DISPLAY").is_err() {
+            viewport_info
+                .outer_rect
+                .map(|r| (Some(r.min.x), Some(r.min.y)))
+                .unwrap_or((None, None))
+        } else {
+            (None, None)
+        };
+
+        let current_state = WindowState {
+            width: Some(width),
+            height: Some(height),
+            x,
+            y,
         };
 
         // Check if state has changed
