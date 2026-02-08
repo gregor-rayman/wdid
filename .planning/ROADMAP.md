@@ -13,7 +13,7 @@ wdid is built in five phases: Foundation establishes data persistence and config
 | Phase | Name | Status | Progress |
 |-------|------|--------|----------|
 | 1 | Foundation & Data Layer | Complete | █████ |
-| 2 | Core GUI & Diary | Planned | ░░░░░ |
+| 2 | Core GUI & Diary | Complete | █████ |
 | 3 | Calendar Integration | Not Started | ░░░░░ |
 | 4 | System Integration | Not Started | ░░░░░ |
 | 5 | Export & Polish | Not Started | ░░░░░ |
@@ -55,10 +55,10 @@ Plans:
 **Plans:** 4 plans
 
 Plans:
-- [ ] 02-01-PLAN.md — UI state foundation + header with date navigation and search box
-- [ ] 02-02-PLAN.md — Timeline display + entry creation (Ctrl+N, time snapping)
-- [ ] 02-03-PLAN.md — Click-to-edit, save, delete, duration editing
-- [ ] 02-04-PLAN.md — Hashtag and full-text search across all entries
+- [x] 02-01-PLAN.md — UI state foundation + header with date navigation and search box
+- [x] 02-02-PLAN.md — Timeline display + entry creation (Ctrl+N, time snapping)
+- [x] 02-03-PLAN.md — Click-to-edit, save, delete, duration editing
+- [x] 02-04-PLAN.md — Hashtag and full-text search across all entries
 
 **Requirements:**
 - DIARY-01: User can create diary entry with start time

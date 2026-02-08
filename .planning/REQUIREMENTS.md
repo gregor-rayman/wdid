@@ -7,14 +7,14 @@
 
 ### Diary Entries
 
-- [ ] **DIARY-01**: User can create diary entry with start time
-- [ ] **DIARY-02**: User can edit diary entry in place (raw markdown input, rendered display)
-- [ ] **DIARY-03**: User can delete diary entry via right-click context menu
-- [ ] **DIARY-04**: User can delete diary entry by clearing all text
+- [x] **DIARY-01**: User can create diary entry with start time
+- [x] **DIARY-02**: User can edit diary entry in place (raw markdown input, rendered display)
+- [x] **DIARY-03**: User can delete diary entry via right-click context menu
+- [x] **DIARY-04**: User can delete diary entry by clearing all text
 - [x] **DIARY-05**: Diary entries persist in SQLite database
 - [ ] **DIARY-06**: User can link diary entry to a calendar event
-- [ ] **DIARY-07**: User can set optional duration on diary entry
-- [ ] **DIARY-08**: User can add hashtags to diary entries for categorization
+- [x] **DIARY-07**: User can set optional duration on diary entry
+- [x] **DIARY-08**: User can add hashtags to diary entries for categorization
 
 ### Calendar Integration
 
@@ -27,10 +27,10 @@
 
 ### Search & Navigation
 
-- [ ] **NAV-01**: User can navigate between days using arrow buttons
-- [ ] **NAV-02**: App displays single-day view (today by default)
-- [ ] **SRCH-01**: User can search entries by hashtag across all dates
-- [ ] **SRCH-02**: Dedicated search box shows filtered results list
+- [x] **NAV-01**: User can navigate between days using arrow buttons
+- [x] **NAV-02**: App displays single-day view (today by default)
+- [x] **SRCH-01**: User can search entries by hashtag across all dates
+- [x] **SRCH-02**: Dedicated search box shows filtered results list
 
 ### System Integration
 
@@ -85,24 +85,24 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DIARY-01 | Phase 2 | Pending |
-| DIARY-02 | Phase 2 | Pending |
-| DIARY-03 | Phase 2 | Pending |
-| DIARY-04 | Phase 2 | Pending |
+| DIARY-01 | Phase 2 | Complete |
+| DIARY-02 | Phase 2 | Complete |
+| DIARY-03 | Phase 2 | Complete |
+| DIARY-04 | Phase 2 | Complete |
 | DIARY-05 | Phase 1 | Complete |
 | DIARY-06 | Phase 3 | Pending |
-| DIARY-07 | Phase 2 | Pending |
-| DIARY-08 | Phase 2 | Pending |
+| DIARY-07 | Phase 2 | Complete |
+| DIARY-08 | Phase 2 | Complete |
 | CAL-01 | Phase 3 | Pending |
 | CAL-02 | Phase 3 | Pending |
 | CAL-03 | Phase 3 | Pending |
 | CAL-04 | Phase 3 | Pending |
 | CAL-05 | Phase 3 | Pending |
 | CAL-06 | Phase 3 | Pending |
-| NAV-01 | Phase 2 | Pending |
-| NAV-02 | Phase 2 | Pending |
-| SRCH-01 | Phase 2 | Pending |
-| SRCH-02 | Phase 2 | Pending |
+| NAV-01 | Phase 2 | Complete |
+| NAV-02 | Phase 2 | Complete |
+| SRCH-01 | Phase 2 | Complete |
+| SRCH-02 | Phase 2 | Complete |
 | SYS-01 | Phase 4 | Pending |
 | SYS-02 | Phase 1 | Complete |
 | SYS-03 | Phase 4 | Pending |
@@ -122,5 +122,5 @@
 
 ---
 *Requirements defined: 2026-02-08*
-*Last updated: 2026-02-08 after roadmap creation*
+*Last updated: 2026-02-08 after Phase 2 completion*
 
