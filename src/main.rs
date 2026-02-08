@@ -3,6 +3,7 @@ mod config;
 mod db;
 mod error;
 mod paths;
+mod ui;
 
 use app::WdidApp;
 use eframe::egui;
