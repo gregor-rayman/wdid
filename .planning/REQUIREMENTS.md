@@ -83,18 +83,44 @@
 
 ## Traceability
 
-<!-- Updated during roadmap creation -->
-
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| — | — | — |
+| DIARY-01 | Phase 2 | Pending |
+| DIARY-02 | Phase 2 | Pending |
+| DIARY-03 | Phase 2 | Pending |
+| DIARY-04 | Phase 2 | Pending |
+| DIARY-05 | Phase 1 | Pending |
+| DIARY-06 | Phase 3 | Pending |
+| DIARY-07 | Phase 2 | Pending |
+| DIARY-08 | Phase 2 | Pending |
+| CAL-01 | Phase 3 | Pending |
+| CAL-02 | Phase 3 | Pending |
+| CAL-03 | Phase 3 | Pending |
+| CAL-04 | Phase 3 | Pending |
+| CAL-05 | Phase 3 | Pending |
+| CAL-06 | Phase 3 | Pending |
+| NAV-01 | Phase 2 | Pending |
+| NAV-02 | Phase 2 | Pending |
+| SRCH-01 | Phase 2 | Pending |
+| SRCH-02 | Phase 2 | Pending |
+| SYS-01 | Phase 4 | Pending |
+| SYS-02 | Phase 1 | Pending |
+| SYS-03 | Phase 4 | Pending |
+| SYS-04 | Phase 4 | Pending |
+| SYS-05 | Phase 4 | Pending |
+| SYS-06 | Phase 4 | Pending |
+| SYS-07 | Phase 1 | Pending |
+| EXP-01 | Phase 5 | Pending |
+| EXP-02 | Phase 5 | Pending |
+| EXP-03 | Phase 5 | Pending |
+| EXP-04 | Phase 5 | Pending |
 
 **Coverage:**
-- v1 requirements: 28 total
-- Mapped to phases: 0
-- Unmapped: 28 ⚠️
+- v1 requirements: 29 total
+- Mapped to phases: 29 ✓
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-08*
-*Last updated: 2026-02-08 after initial definition*
+*Last updated: 2026-02-08 after roadmap creation*
 
