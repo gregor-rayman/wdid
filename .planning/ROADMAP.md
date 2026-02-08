@@ -87,6 +87,17 @@ Plans:
 
 **Dependencies:** Phase 2 (GUI framework)
 
+**Plans:** 7 plans
+
+Plans:
+- [ ] 03-01-PLAN.md — Calendar data layer (types + database schema)
+- [ ] 03-02-PLAN.md — iCal parsing with RRULE expansion
+- [ ] 03-03-PLAN.md — Async HTTP fetching with tokio
+- [ ] 03-04-PLAN.md — Fetch → parse → cache pipeline
+- [ ] 03-05-PLAN.md — Two-column timeline with sync scroll
+- [ ] 03-06-PLAN.md — Manual + hourly refresh controls
+- [ ] 03-07-PLAN.md — Diary-event linking
+
 **Requirements:**
 - CAL-01: App imports events from iCal feeds (URLs or .ics files)
 - CAL-02: Calendar events display in left column of timeline
