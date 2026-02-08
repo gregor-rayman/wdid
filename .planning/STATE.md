@@ -7,36 +7,36 @@
 
 **Core Value:** See your day at a glance and capture what you did — calendar events and personal notes unified in a single timeline.
 
-**Current Focus:** Phase 2: Core GUI - UI Module & Header complete
+**Current Focus:** Phase 2: Core GUI - Timeline View & Entry Creation complete
 
 ## Current Position
 
 | Dimension | Value |
 |-----------|-------|
 | Phase | 2 of 5 (02-core-gui) |
-| Plan | 01 of 05 complete |
+| Plan | 02 of 05 complete |
 | Status | In progress |
-| Last Activity | 2026-02-08 - Completed 02-01-PLAN.md |
+| Last Activity | 2026-02-08 - Completed 02-02-PLAN.md |
 
 **Overall Progress:**
 ```
 Phase 1 [Foundation]    ██████████ 100% (3/3 plans) ✓
-Phase 2 [Core GUI]      ██░░░░░░░░ 20% (1/5 plans)
+Phase 2 [Core GUI]      ████░░░░░░ 40% (2/5 plans)
 Phase 3 [Calendar]      ░░░░░░░░░░ 0%
 Phase 4 [System]        ░░░░░░░░░░ 0%
 Phase 5 [Export]        ░░░░░░░░░░ 0%
 ─────────────────────────────────────
-Total                   ███░░░░░░░ ~27%
+Total                   ████░░░░░░ ~33%
 ```
 
 ## Performance Metrics
 
 | Metric | Value |
 |--------|-------|
-| Plans Completed | 4 |
+| Plans Completed | 5 |
 | Plans Failed | 0 |
 | Avg Attempts per Plan | 1 |
-| Requirements Complete | 7/29 |
+| Requirements Complete | 9/29 |
 
 ## Accumulated Context
 
@@ -58,6 +58,9 @@ Total                   ███░░░░░░░ ~27%
 | DiaryViewState::new() for today | Uses chrono::Local for current date | 02-01 |
 | checked_add/sub_days for date nav | Safe date arithmetic, handles edge cases | 02-01 |
 | Right-aligned search via Layout | ui.with_layout(Layout::right_to_left) | 02-01 |
+| snap_to_15_minutes rounding | Rounds to nearest quarter hour, caps at :45 | 02-02 |
+| CommonMarkViewer for markdown | egui_commonmark@0.21 renders entry content | 02-02 |
+| modifiers.command for Ctrl | Cross-platform: Ctrl on Linux/Windows, Cmd on Mac | 02-02 |
 
 ### Technical Discoveries
 
@@ -79,7 +82,7 @@ Total                   ███░░░░░░░ ~27%
 - [x] Design database schema for diary entries (01-02)
 - [x] Plan Phase 1 in detail
 - [x] Begin Phase 2: Core GUI (02-01)
-- [ ] Timeline view with entries (02-02)
+- [x] Timeline view with entries (02-02)
 - [ ] Entry creation/editing (02-03)
 - [ ] Settings panel (02-04)
 - [ ] Search functionality (02-05)
@@ -94,15 +97,15 @@ Total                   ███░░░░░░░ ~27%
 
 ## Session Continuity
 
-**Last Session:** 2026-02-08 - Completed 02-01-PLAN.md (UI Module & Header)
+**Last Session:** 2026-02-08 - Completed 02-02-PLAN.md (Timeline View & Entry Creation)
 
-**Stopped At:** Completed 02-01-PLAN.md
-**Resume File:** .planning/phases/02-core-gui/02-02-PLAN.md
+**Stopped At:** Completed 02-02-PLAN.md
+**Resume File:** .planning/phases/02-core-gui/02-03-PLAN.md
 
 **Next Actions:**
-1. Create timeline view component (02-02)
-2. Implement diary entry creation UI (02-03)
-3. Build settings panel (02-04)
+1. Implement diary entry editing UI (02-03)
+2. Build settings panel (02-04)
+3. Implement search functionality (02-05)
 
 **Context to Preserve:**
 - Research recommends foundation-first approach
@@ -113,8 +116,10 @@ Total                   ███░░░░░░░ ~27%
 - CRUD operations ready: save_entry, get_entries_for_date, update_entry, delete_entry
 - Config module provides Config, ConfigResult, load_config exports
 - WdidApp struct wires db + config together, implements eframe::App
-- UI module provides DiaryViewState, render_header for header bar
-- DiaryViewState.current_date tracks selected date for timeline display
+- UI module provides DiaryViewState, render_header, render_timeline, render_entry_view
+- Timeline displays entries from current_date via get_entries_for_date
+- Ctrl+N creates new entries with 15-minute snapped times
+- snap_to_15_minutes helper available for time operations
 
 ---
 *State updated: 2026-02-08*
