@@ -1,6 +1,6 @@
 use std::sync::mpsc::{Receiver, Sender};
 
-use chrono::{Duration, Local};
+use chrono::{DateTime, Duration, Local};
 use eframe::egui;
 use egui::Key;
 use egui_commonmark::CommonMarkCache;
@@ -10,6 +10,9 @@ use crate::config::{Config, ConfigResult};
 use crate::db::{CachedFeed, Database, DiaryEntry, NewDiaryEntry};
 use crate::paths::AppPaths;
 use crate::ui::{snap_to_15_minutes, DiaryViewState, HeaderAction};
+
+/// Auto-refresh interval for calendar feeds (1 hour)
+const AUTO_REFRESH_INTERVAL: Duration = Duration::hours(1);
 
 #[allow(dead_code)]
 pub struct WdidApp {
@@ -31,6 +34,8 @@ pub struct WdidApp {
     calendar_rx: Receiver<CalendarResult>,
     /// Whether initial calendar refresh has been triggered
     calendar_refresh_triggered: bool,
+    /// Last time we checked for auto-refresh
+    last_refresh_check: DateTime<Local>,
 }
 
 impl WdidApp {
@@ -66,6 +71,7 @@ impl WdidApp {
             calendar_tx,
             calendar_rx,
             calendar_refresh_triggered: false,
+            last_refresh_check: Local::now(),
         }
     }
 
@@ -249,10 +255,15 @@ impl eframe::App for WdidApp {
         // Trigger initial calendar refresh if configured feeds exist
         if !self.calendar_refresh_triggered && !self.config.calendars.is_empty() {
             self.calendar_refresh_triggered = true;
-            self.view_state.calendar_refreshing = true;
-            let _ = self
-                .calendar_tx
-                .send(CalendarCommand::RefreshAll(self.config.calendars.clone()));
+            self.last_refresh_check = Local::now();
+            self.trigger_calendar_refresh();
+        }
+
+        // Check for hourly auto-refresh
+        let now = Local::now();
+        if now.signed_duration_since(self.last_refresh_check) >= AUTO_REFRESH_INTERVAL {
+            self.last_refresh_check = now;
+            self.trigger_calendar_refresh();
         }
 
         // Poll for calendar results (non-blocking)
