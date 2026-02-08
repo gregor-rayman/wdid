@@ -1,12 +1,13 @@
 use std::sync::mpsc::{Receiver, Sender};
 
+use chrono::{Duration, Local};
 use eframe::egui;
 use egui::Key;
 use egui_commonmark::CommonMarkCache;
 
-use crate::calendar::{spawn_calendar_worker, CalendarCommand, CalendarResult};
+use crate::calendar::{parse_ical, spawn_calendar_worker, CalendarCommand, CalendarResult};
 use crate::config::{Config, ConfigResult};
-use crate::db::{Database, DiaryEntry, NewDiaryEntry};
+use crate::db::{CachedFeed, Database, DiaryEntry, NewDiaryEntry};
 use crate::paths::AppPaths;
 use crate::ui::{snap_to_15_minutes, DiaryViewState};
 
@@ -22,6 +23,8 @@ pub struct WdidApp {
     entries: Vec<DiaryEntry>,
     /// Track which date entries were loaded for
     entries_date: Option<chrono::NaiveDate>,
+    /// Track which date calendar events were loaded for
+    calendar_events_date: Option<chrono::NaiveDate>,
     /// Channel to send commands to the calendar worker
     calendar_tx: Sender<CalendarCommand>,
     /// Channel to receive results from the calendar worker
@@ -59,6 +62,7 @@ impl WdidApp {
             markdown_cache: CommonMarkCache::default(),
             entries: Vec::new(),
             entries_date: None,
+            calendar_events_date: None,
             calendar_tx,
             calendar_rx,
             calendar_refresh_triggered: false,
@@ -106,6 +110,128 @@ impl WdidApp {
             }
         }
     }
+
+    /// Load calendar events for the current date from the database.
+    /// Separates all-day events from timed events.
+    fn load_calendar_events(&mut self) {
+        let date = self.view_state.current_date;
+        match self.db.get_calendar_events_for_date(date) {
+            Ok(events) => {
+                // Separate all-day from timed events
+                let (all_day, timed): (Vec<_>, Vec<_>) =
+                    events.into_iter().partition(|e| e.all_day);
+                self.view_state.all_day_events = all_day;
+                self.view_state.calendar_events = timed;
+                self.calendar_events_date = Some(date);
+            }
+            Err(e) => {
+                eprintln!("Failed to load calendar events: {}", e);
+                self.view_state.all_day_events = Vec::new();
+                self.view_state.calendar_events = Vec::new();
+            }
+        }
+    }
+
+    /// Process fetched iCal data: parse, cache, and reload events.
+    fn process_feed_data(
+        &mut self,
+        feed_url: &str,
+        data: &str,
+        feed_name: Option<String>,
+        feed_color: Option<String>,
+    ) {
+        // Calculate date range: current date +/- 7 days
+        let today = Local::now().date_naive();
+        let range_start = today - Duration::days(7);
+        let range_end = today + Duration::days(7);
+
+        // Parse the iCal data
+        match parse_ical(
+            data,
+            feed_url,
+            range_start,
+            range_end,
+            feed_name.clone(),
+            feed_color.clone(),
+        ) {
+            Ok(events) => {
+                eprintln!(
+                    "Parsed {} events from {} (range: {} to {})",
+                    events.len(),
+                    feed_url,
+                    range_start,
+                    range_end
+                );
+
+                // Clear old events for this feed
+                if let Err(e) = self.db.clear_feed_events(feed_url) {
+                    eprintln!("Failed to clear old events for {}: {}", feed_url, e);
+                }
+
+                // Save new events to database
+                for event in &events {
+                    if let Err(e) = self.db.save_calendar_event(event) {
+                        eprintln!("Failed to save event '{}': {}", event.summary, e);
+                    }
+                }
+
+                // Update feed metadata (success)
+                let now = Local::now();
+                let feed = CachedFeed {
+                    url: feed_url.to_string(),
+                    name: feed_name,
+                    color: feed_color,
+                    last_refresh: Some(now.format("%Y-%m-%dT%H:%M:%S").to_string()),
+                    last_error: None,
+                };
+                if let Err(e) = self.db.save_feed(&feed) {
+                    eprintln!("Failed to save feed metadata: {}", e);
+                }
+
+                // Clear any previous error for this feed
+                self.view_state.feed_errors.remove(feed_url);
+                // Update last refresh time
+                self.view_state
+                    .feed_last_refresh
+                    .insert(feed_url.to_string(), now);
+
+                // Reload events for display
+                self.load_calendar_events();
+            }
+            Err(e) => {
+                eprintln!("Failed to parse iCal from {}: {}", feed_url, e);
+                // Track as feed error
+                self.view_state
+                    .feed_errors
+                    .insert(feed_url.to_string(), e.to_string());
+            }
+        }
+    }
+
+    /// Handle feed error: track error, but still load cached data.
+    fn handle_feed_error(&mut self, feed_url: &str, error: &str) {
+        eprintln!("Feed error {}: {}", feed_url, error);
+
+        // Track the error for UI display
+        self.view_state
+            .feed_errors
+            .insert(feed_url.to_string(), error.to_string());
+
+        // Update feed metadata with error
+        let feed = CachedFeed {
+            url: feed_url.to_string(),
+            name: None, // Keep existing name if any
+            color: None,
+            last_refresh: None, // Don't update refresh time on error
+            last_error: Some(error.to_string()),
+        };
+        if let Err(e) = self.db.save_feed(&feed) {
+            eprintln!("Failed to save feed error: {}", e);
+        }
+
+        // Still load cached events (stale data is better than no data)
+        self.load_calendar_events();
+    }
 }
 
 impl eframe::App for WdidApp {
@@ -113,6 +239,7 @@ impl eframe::App for WdidApp {
         // Trigger initial calendar refresh if configured feeds exist
         if !self.calendar_refresh_triggered && !self.config.calendars.is_empty() {
             self.calendar_refresh_triggered = true;
+            self.view_state.calendar_refreshing = true;
             let _ = self
                 .calendar_tx
                 .send(CalendarCommand::RefreshAll(self.config.calendars.clone()));
@@ -127,21 +254,14 @@ impl eframe::App for WdidApp {
                     feed_name,
                     feed_color,
                 } => {
-                    // TODO: parse and cache (Plan 04)
-                    eprintln!(
-                        "Received {} bytes from {} (name: {:?}, color: {:?})",
-                        data.len(),
-                        feed_url,
-                        feed_name,
-                        feed_color
-                    );
+                    self.process_feed_data(&feed_url, &data, feed_name, feed_color);
                 }
                 CalendarResult::FeedError { feed_url, error } => {
-                    eprintln!("Feed error {}: {}", feed_url, error);
+                    self.handle_feed_error(&feed_url, &error);
                 }
                 CalendarResult::RefreshComplete => {
                     eprintln!("Calendar refresh complete");
-                    // TODO: update UI state (Plan 04)
+                    self.view_state.calendar_refreshing = false;
                 }
             }
             ctx.request_repaint();
@@ -150,6 +270,11 @@ impl eframe::App for WdidApp {
         // Reload entries if date changed
         if self.entries_date != Some(self.view_state.current_date) {
             self.load_entries();
+        }
+
+        // Reload calendar events if date changed
+        if self.calendar_events_date != Some(self.view_state.current_date) {
+            self.load_calendar_events();
         }
 
         // Handle Ctrl+N for new entry (only if not typing in a text field)
