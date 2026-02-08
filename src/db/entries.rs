@@ -85,6 +85,40 @@ impl Database {
         self.conn().execute("DELETE FROM diary_entries WHERE id = ?1", [id])?;
         Ok(())
     }
+
+    /// Search entries by hashtag (without the # prefix).
+    /// Returns entries containing #tag, sorted by date (newest first) then time.
+    pub fn search_by_hashtag(&self, tag: &str) -> Result<Vec<DiaryEntry>> {
+        let mut stmt = self.conn().prepare_cached(
+            r#"SELECT id, date, start_time, duration, content, created_at, updated_at,
+                      event_uid, event_snapshot
+               FROM diary_entries
+               WHERE content LIKE '%#' || ?1 || '%'
+               ORDER BY date DESC, start_time"#,
+        )?;
+
+        let entries = stmt
+            .query_map([tag], |row| Ok(DiaryEntry::from_row(row)))?
+            .collect::<std::result::Result<Vec<_>, _>>()?;
+        Ok(entries)
+    }
+
+    /// Search entries by text content (case-insensitive for ASCII).
+    /// Returns entries containing the query, sorted by date (newest first) then time.
+    pub fn search_by_text(&self, query: &str) -> Result<Vec<DiaryEntry>> {
+        let mut stmt = self.conn().prepare_cached(
+            r#"SELECT id, date, start_time, duration, content, created_at, updated_at,
+                      event_uid, event_snapshot
+               FROM diary_entries
+               WHERE content LIKE '%' || ?1 || '%'
+               ORDER BY date DESC, start_time"#,
+        )?;
+
+        let entries = stmt
+            .query_map([query], |row| Ok(DiaryEntry::from_row(row)))?
+            .collect::<std::result::Result<Vec<_>, _>>()?;
+        Ok(entries)
+    }
 }
 
 impl DiaryEntry {
