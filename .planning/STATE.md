@@ -7,36 +7,36 @@
 
 **Core Value:** See your day at a glance and capture what you did — calendar events and personal notes unified in a single timeline.
 
-**Current Focus:** Phase 2 Complete - Ready for Phase 3: Calendar Integration
+**Current Focus:** Phase 3 In Progress - Calendar Integration
 
 ## Current Position
 
 | Dimension | Value |
 |-----------|-------|
-| Phase | 2 of 5 (02-core-gui) |
-| Plan | 04 of 04 complete |
-| Status | Complete |
-| Last Activity | 2026-02-08 - Completed Phase 2 |
+| Phase | 3 of 5 (03-calendar) |
+| Plan | 01 of 03 complete |
+| Status | In progress |
+| Last Activity | 2026-02-08 - Completed 03-01-PLAN.md |
 
 **Overall Progress:**
 ```
 Phase 1 [Foundation]    ██████████ 100% (3/3 plans) ✓
 Phase 2 [Core GUI]      ██████████ 100% (4/4 plans) ✓
-Phase 3 [Calendar]      ░░░░░░░░░░ 0%
+Phase 3 [Calendar]      ███░░░░░░░ 33% (1/3 plans)
 Phase 4 [System]        ░░░░░░░░░░ 0%
 Phase 5 [Export]        ░░░░░░░░░░ 0%
 ─────────────────────────────────────
-Total                   ████░░░░░░ ~40%
+Total                   █████░░░░░ ~47%
 ```
 
 ## Performance Metrics
 
 | Metric | Value |
 |--------|-------|
-| Plans Completed | 7 |
+| Plans Completed | 8 |
 | Plans Failed | 0 |
 | Avg Attempts per Plan | 1 |
-| Requirements Complete | 13/29 |
+| Requirements Complete | 14/29 |
 
 ## Accumulated Context
 
@@ -67,6 +67,9 @@ Total                   ████░░░░░░ ~40%
 | Hashtag prefix detection | '#' prefix switches to hashtag-specific search | 02-04 |
 | LIKE query for search | Simple substring matching, case-insensitive | 02-04 |
 | Search change detection | prev_search_query comparison avoids re-querying | 02-04 |
+| CalendarEvent with NaiveDate/NaiveTime | Separate date/time fields for all-day handling | 03-01 |
+| UNIQUE(feed_url, event_uid, dtstart_date) | Allows same event on different dates for recurring expansion | 03-01 |
+| LEFT JOIN calendar_feeds | Attach feed metadata without requiring feed entry first | 03-01 |
 
 ### Technical Discoveries
 
@@ -111,17 +114,18 @@ Total                   ████░░░░░░ ~40%
 **Resume File:** .planning/phases/03-calendar/
 
 **Next Actions:**
-1. Plan Phase 3: Calendar Integration
-2. Implement iCal feed parsing
-3. Build two-column timeline layout
+1. Execute 03-02-PLAN.md: iCal feed parsing
+2. Execute 03-03-PLAN.md: Two-column timeline layout
+3. Complete Phase 3: Calendar Integration
 
 **Context to Preserve:**
 - Research recommends foundation-first approach
 - calcard is less battle-tested; may need fallback to icalendar crate
 - Linux DE fragmentation affects system tray (Phase 4)
 - AppError and AppPaths modules now available for use
-- Database module provides Database, DiaryEntry, NewDiaryEntry exports
+- Database module provides Database, DiaryEntry, NewDiaryEntry, CachedFeed exports
 - CRUD operations ready: save_entry, get_entries_for_date, update_entry_full, delete_entry
+- Calendar CRUD: save_calendar_event, get_calendar_events_for_date, clear_feed_events
 - Config module provides Config, ConfigResult, load_config exports
 - WdidApp struct wires db + config together, implements eframe::App
 - UI module provides DiaryViewState, render_header, render_timeline, render_entry
@@ -131,6 +135,8 @@ Total                   ████░░░░░░ ~40%
 - Duration editing with calculated end time display
 - Search: search_by_hashtag and search_by_text in database layer
 - Search UI: prev_search_query tracking, is_search_mode timeline parameter
+- CalendarEvent struct in src/calendar/types.rs with all fields for display/caching
+- calendar_events and calendar_feeds tables ready for caching
 
 ---
 *State updated: 2026-02-08*
