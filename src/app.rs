@@ -258,6 +258,51 @@ impl WdidApp {
                 .send(CalendarCommand::RefreshAll(self.config.calendars.clone()));
         }
     }
+
+    /// Save window state if it has changed since last save.
+    fn save_window_state_if_changed(&mut self, ctx: &egui::Context) {
+        let viewport_info = ctx.input(|i| i.viewport().clone());
+
+        // Get current window dimensions
+        let current_state = if let Some(inner_rect) = viewport_info.inner_rect {
+            let (width, height) = (inner_rect.width(), inner_rect.height());
+
+            // Only save position on X11 (WAYLAND_DISPLAY not set)
+            let (x, y) = if std::env::var("WAYLAND_DISPLAY").is_err() {
+                viewport_info
+                    .outer_rect
+                    .map(|r| (Some(r.min.x), Some(r.min.y)))
+                    .unwrap_or((None, None))
+            } else {
+                (None, None)
+            };
+
+            WindowState {
+                width: Some(width),
+                height: Some(height),
+                x,
+                y,
+            }
+        } else {
+            return; // No viewport info available yet
+        };
+
+        // Check if state has changed
+        let changed = current_state.width != self.last_saved_window_state.width
+            || current_state.height != self.last_saved_window_state.height
+            || current_state.x != self.last_saved_window_state.x
+            || current_state.y != self.last_saved_window_state.y;
+
+        if changed {
+            if let Err(e) =
+                crate::config::save_window_state(&self.window_state_file, &current_state)
+            {
+                eprintln!("Failed to save window state: {}", e);
+            } else {
+                self.last_saved_window_state = current_state;
+            }
+        }
+    }
 }
 
 impl eframe::App for WdidApp {
@@ -274,6 +319,12 @@ impl eframe::App for WdidApp {
         if now.signed_duration_since(self.last_refresh_check) >= AUTO_REFRESH_INTERVAL {
             self.last_refresh_check = now;
             self.trigger_calendar_refresh();
+        }
+
+        // Periodically save window state (every 5 seconds if changed)
+        if self.last_window_save.elapsed() >= WINDOW_SAVE_INTERVAL {
+            self.save_window_state_if_changed(ctx);
+            self.last_window_save = Instant::now();
         }
 
         // Poll for calendar results (non-blocking)
