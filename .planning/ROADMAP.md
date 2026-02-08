@@ -81,7 +81,7 @@ Plans:
 
 ---
 
-## Phase 3: Calendar Integration
+## Phase 3: Calendar Integration ✓ COMPLETE
 
 **Goal:** Users can see their calendar events alongside diary entries in a unified timeline.
 
@@ -90,13 +90,13 @@ Plans:
 **Plans:** 7 plans
 
 Plans:
-- [ ] 03-01-PLAN.md — Calendar data layer (types + database schema)
-- [ ] 03-02-PLAN.md — iCal parsing with RRULE expansion
-- [ ] 03-03-PLAN.md — Async HTTP fetching with tokio
-- [ ] 03-04-PLAN.md — Fetch → parse → cache pipeline
-- [ ] 03-05-PLAN.md — Two-column timeline with sync scroll
-- [ ] 03-06-PLAN.md — Manual + hourly refresh controls
-- [ ] 03-07-PLAN.md — Diary-event linking
+- [x] 03-01-PLAN.md — Calendar data layer (types + database schema)
+- [x] 03-02-PLAN.md — iCal parsing with RRULE expansion
+- [x] 03-03-PLAN.md — Async HTTP fetching with tokio
+- [x] 03-04-PLAN.md — Fetch → parse → cache pipeline
+- [x] 03-05-PLAN.md — Two-column timeline with sync scroll
+- [x] 03-06-PLAN.md — Manual + hourly refresh controls
+- [x] 03-07-PLAN.md — Diary-event linking
 
 **Requirements:**
 - CAL-01: App imports events from iCal feeds (URLs or .ics files)

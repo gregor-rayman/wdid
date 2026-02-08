@@ -12,18 +12,18 @@
 - [x] **DIARY-03**: User can delete diary entry via right-click context menu
 - [x] **DIARY-04**: User can delete diary entry by clearing all text
 - [x] **DIARY-05**: Diary entries persist in SQLite database
-- [ ] **DIARY-06**: User can link diary entry to a calendar event
+- [x] **DIARY-06**: User can link diary entry to a calendar event
 - [x] **DIARY-07**: User can set optional duration on diary entry
 - [x] **DIARY-08**: User can add hashtags to diary entries for categorization
 
 ### Calendar Integration
 
-- [ ] **CAL-01**: App imports events from iCal feeds (URLs or .ics files)
-- [ ] **CAL-02**: Calendar events display in left column of timeline
-- [ ] **CAL-03**: User can manually refresh calendar feeds
-- [ ] **CAL-04**: App automatically refreshes calendar feeds hourly
-- [ ] **CAL-05**: App supports 3-5 calendar feeds configured via TOML
-- [ ] **CAL-06**: Two-column layout shows events (left) and diary entries (right) aligned by time
+- [x] **CAL-01**: App imports events from iCal feeds (URLs or .ics files)
+- [x] **CAL-02**: Calendar events display in left column of timeline
+- [x] **CAL-03**: User can manually refresh calendar feeds
+- [x] **CAL-04**: App automatically refreshes calendar feeds hourly
+- [x] **CAL-05**: App supports 3-5 calendar feeds configured via TOML
+- [x] **CAL-06**: Two-column layout shows events (left) and diary entries (right) aligned by time
 
 ### Search & Navigation
 
@@ -90,15 +90,15 @@
 | DIARY-03 | Phase 2 | Complete |
 | DIARY-04 | Phase 2 | Complete |
 | DIARY-05 | Phase 1 | Complete |
-| DIARY-06 | Phase 3 | Pending |
+| DIARY-06 | Phase 3 | Complete |
 | DIARY-07 | Phase 2 | Complete |
 | DIARY-08 | Phase 2 | Complete |
-| CAL-01 | Phase 3 | Pending |
-| CAL-02 | Phase 3 | Pending |
-| CAL-03 | Phase 3 | Pending |
-| CAL-04 | Phase 3 | Pending |
-| CAL-05 | Phase 3 | Pending |
-| CAL-06 | Phase 3 | Pending |
+| CAL-01 | Phase 3 | Complete |
+| CAL-02 | Phase 3 | Complete |
+| CAL-03 | Phase 3 | Complete |
+| CAL-04 | Phase 3 | Complete |
+| CAL-05 | Phase 3 | Complete |
+| CAL-06 | Phase 3 | Complete |
 | NAV-01 | Phase 2 | Complete |
 | NAV-02 | Phase 2 | Complete |
 | SRCH-01 | Phase 2 | Complete |
