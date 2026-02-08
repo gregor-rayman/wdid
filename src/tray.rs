@@ -103,10 +103,12 @@ fn load_icon(bytes: &[u8]) -> Option<Icon> {
 fn build_menu() -> Menu {
     let menu = Menu::new();
 
-    let show_item = MenuItem::with_id("show", "Show", true, None);
+    // Use "Show/Hide" to toggle visibility (on Linux with AppIndicator,
+    // left-click opens the menu, so toggle happens via menu item)
+    let toggle_item = MenuItem::with_id("toggle", "Show/Hide", true, None);
     let quit_item = MenuItem::with_id("quit", "Quit", true, None);
 
-    let _ = menu.append(&show_item);
+    let _ = menu.append(&toggle_item);
     let _ = menu.append(&quit_item);
 
     menu
@@ -119,9 +121,16 @@ fn setup_event_handlers(tx: Sender<TrayCommand>) {
     // Handle menu events
     MenuEvent::set_event_handler(Some(move |event: MenuEvent| {
         match event.id.0.as_str() {
-            "show" => {
-                let _ = tx_menu.send(TrayCommand::Show);
-                VISIBLE.store(true, Ordering::SeqCst);
+            "toggle" => {
+                // Toggle visibility (works around AppIndicator left-click limitation)
+                let currently_visible = VISIBLE.load(Ordering::SeqCst);
+                if currently_visible {
+                    let _ = tx_menu.send(TrayCommand::Hide);
+                    VISIBLE.store(false, Ordering::SeqCst);
+                } else {
+                    let _ = tx_menu.send(TrayCommand::Show);
+                    VISIBLE.store(true, Ordering::SeqCst);
+                }
             }
             "quit" => {
                 let _ = tx_menu.send(TrayCommand::Quit);
