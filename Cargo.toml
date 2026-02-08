@@ -9,6 +9,7 @@ chrono = "0.4"
 directories = "6.0.0"
 eframe = "0.32.0"
 egui = "0.32.0"
+egui_commonmark = "0.21"
 rusqlite = { version = "0.38.0", features = ["bundled"] }
 serde = { version = "1.0.228", features = ["derive"] }
 thiserror = "2.0.18"

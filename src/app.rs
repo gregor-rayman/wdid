@@ -1,4 +1,5 @@
 use eframe::egui;
+use egui_commonmark::CommonMarkCache;
 
 use crate::config::{Config, ConfigResult};
 use crate::db::Database;
@@ -12,6 +13,7 @@ pub struct WdidApp {
     config_warning: Option<String>,
     first_run: bool,
     view_state: DiaryViewState,
+    markdown_cache: CommonMarkCache,
 }
 
 impl WdidApp {
@@ -37,6 +39,7 @@ impl WdidApp {
             config_warning,
             first_run,
             view_state: DiaryViewState::default(),
+            markdown_cache: CommonMarkCache::default(),
         }
     }
 }
