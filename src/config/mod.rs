@@ -1,0 +1,42 @@
+mod types;
+pub use types::{CalendarFeed, Config};
+
+use std::fs;
+use std::path::Path;
+
+pub enum ConfigResult {
+    Loaded(Config),
+    Created(Config),      // first run, created default config
+    ParseError(String),   // user-friendly parse error
+}
+
+const DEFAULT_CONFIG: &str = r##"# wdid configuration
+# Add calendar feeds below:
+# [[calendars]]
+# url = "https://calendar.google.com/calendar/ical/..."
+# name = "Work"
+# color = "#3b82f6"
+"##;
+
+pub fn load_config(path: &Path) -> ConfigResult {
+    if !path.exists() {
+        // First run: create config file with examples
+        if let Err(e) = fs::write(path, DEFAULT_CONFIG) {
+            return ConfigResult::ParseError(format!("Could not create config file: {}", e));
+        }
+        return ConfigResult::Created(Config::default());
+    }
+
+    match fs::read_to_string(path) {
+        Ok(content) => match toml::from_str(&content) {
+            Ok(config) => ConfigResult::Loaded(config),
+            Err(e) => ConfigResult::ParseError(format!(
+                "Config file has errors at line {}: {}",
+                e.span().map(|s| s.start).unwrap_or(0),
+                e.message()
+            )),
+        },
+        Err(e) => ConfigResult::ParseError(format!("Could not read config file: {}", e)),
+    }
+}
+
