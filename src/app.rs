@@ -335,6 +335,36 @@ impl eframe::App for WdidApp {
             self.last_window_save = Instant::now();
         }
 
+        // Handle close-to-tray: hide window instead of quitting
+        if ctx.input(|i| i.viewport().close_requested()) {
+            ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
+            ctx.send_viewport_cmd(egui::ViewportCommand::Visible(false));
+            crate::tray::set_visible(false);
+            // Save window state before hiding
+            self.save_window_state_if_changed(ctx);
+        }
+
+        // Poll for tray commands (non-blocking)
+        while let Ok(cmd) = self.tray_rx.try_recv() {
+            match cmd {
+                TrayCommand::Show => {
+                    ctx.send_viewport_cmd(egui::ViewportCommand::Visible(true));
+                    ctx.send_viewport_cmd(egui::ViewportCommand::Focus);
+                    crate::tray::set_visible(true);
+                }
+                TrayCommand::Hide => {
+                    ctx.send_viewport_cmd(egui::ViewportCommand::Visible(false));
+                    crate::tray::set_visible(false);
+                }
+                TrayCommand::Quit => {
+                    // Save window state before quitting
+                    self.save_window_state_if_changed(ctx);
+                    std::process::exit(0);
+                }
+            }
+            ctx.request_repaint();
+        }
+
         // Poll for calendar results (non-blocking)
         while let Ok(result) = self.calendar_rx.try_recv() {
             match result {
