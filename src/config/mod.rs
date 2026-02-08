@@ -1,5 +1,5 @@
 mod types;
-pub use types::{CalendarFeed, Config};
+pub use types::{CalendarFeed, Config, WindowState};
 
 use std::fs;
 use std::path::Path;
@@ -38,5 +38,24 @@ pub fn load_config(path: &Path) -> ConfigResult {
         },
         Err(e) => ConfigResult::ParseError(format!("Could not read config file: {}", e)),
     }
+}
+
+/// Load window state from file. Returns default if file is missing or invalid.
+pub fn load_window_state(path: &Path) -> WindowState {
+    if !path.exists() {
+        return WindowState::default();
+    }
+
+    match fs::read_to_string(path) {
+        Ok(content) => toml::from_str(&content).unwrap_or_default(),
+        Err(_) => WindowState::default(),
+    }
+}
+
+/// Save window state to file.
+pub fn save_window_state(path: &Path, state: &WindowState) -> std::io::Result<()> {
+    let content = toml::to_string_pretty(state)
+        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+    fs::write(path, content)
 }
 
