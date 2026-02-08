@@ -1,0 +1,88 @@
+use rusqlite::{params, Row};
+
+use super::Database;
+use crate::error::Result;
+
+#[derive(Debug, Clone)]
+pub struct DiaryEntry {
+    pub id: i64,
+    pub date: String,           // YYYY-MM-DD format
+    pub start_time: String,     // HH:MM format
+    pub duration: Option<i32>,  // minutes
+    pub content: String,
+    pub created_at: String,
+    pub updated_at: String,
+    pub event_uid: Option<String>,
+    pub event_snapshot: Option<String>,
+}
+
+pub struct NewDiaryEntry {
+    pub date: String,
+    pub start_time: String,
+    pub duration: Option<i32>,
+    pub content: String,
+    pub event_uid: Option<String>,
+    pub event_snapshot: Option<String>,
+}
+
+impl Database {
+    pub fn save_entry(&self, entry: &NewDiaryEntry) -> Result<i64> {
+        self.conn().execute(
+            r#"INSERT INTO diary_entries (date, start_time, duration, content, event_uid, event_snapshot)
+               VALUES (?1, ?2, ?3, ?4, ?5, ?6)"#,
+            params![
+                entry.date,
+                entry.start_time,
+                entry.duration,
+                entry.content,
+                entry.event_uid,
+                entry.event_snapshot
+            ],
+        )?;
+        Ok(self.conn().last_insert_rowid())
+    }
+
+    pub fn get_entries_for_date(&self, date: &str) -> Result<Vec<DiaryEntry>> {
+        let mut stmt = self.conn().prepare_cached(
+            r#"SELECT id, date, start_time, duration, content, created_at, updated_at,
+                      event_uid, event_snapshot
+               FROM diary_entries WHERE date = ?1
+               ORDER BY start_time, created_at"#,
+        )?;
+
+        let entries = stmt
+            .query_map([date], |row| Ok(DiaryEntry::from_row(row)))?
+            .collect::<std::result::Result<Vec<_>, _>>()?;
+        Ok(entries)
+    }
+
+    pub fn update_entry(&self, id: i64, content: &str) -> Result<()> {
+        self.conn().execute(
+            r#"UPDATE diary_entries SET content = ?1, updated_at = datetime('now') WHERE id = ?2"#,
+            params![content, id],
+        )?;
+        Ok(())
+    }
+
+    pub fn delete_entry(&self, id: i64) -> Result<()> {
+        self.conn().execute("DELETE FROM diary_entries WHERE id = ?1", [id])?;
+        Ok(())
+    }
+}
+
+impl DiaryEntry {
+    fn from_row(row: &Row) -> Self {
+        Self {
+            id: row.get(0).unwrap(),
+            date: row.get(1).unwrap(),
+            start_time: row.get(2).unwrap(),
+            duration: row.get(3).unwrap(),
+            content: row.get(4).unwrap(),
+            created_at: row.get(5).unwrap(),
+            updated_at: row.get(6).unwrap(),
+            event_uid: row.get(7).unwrap(),
+            event_snapshot: row.get(8).unwrap(),
+        }
+    }
+}
+
