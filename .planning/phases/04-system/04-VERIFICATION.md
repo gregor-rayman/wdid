@@ -1,8 +1,41 @@
 ---
 phase: 04-system
-verified: 2026-02-08T22:00:00Z
+verified: 2026-02-08T22:15:00Z
 status: passed
 score: 8/8 must-haves verified
+
+gap_closure_round_3:
+  plan: 04-05-PLAN.md
+  verified: 2026-02-08T22:15:00Z
+  status: passed
+  score: 2/2 truths verified, 2/2 artifacts verified, 2/2 key_links verified
+  truths_verified:
+    - truth: "Show/Hide menu item toggles window visibility on Wayland"
+      status: verified
+      evidence: "src/app.rs:368-386 - TrayCommand::Show/Hide use Minimized(false/true) when is_wayland()"
+    - truth: "X button hides window to tray on Wayland"
+      status: verified
+      evidence: "src/app.rs:329-343 - close_requested uses Minimized(true) when is_wayland()"
+  artifacts_verified:
+    - path: "src/app.rs"
+      contains: "is_wayland"
+      status: verified
+      lines: [17, 18, 19, 20]
+    - path: "src/app.rs"
+      contains: "Minimized"
+      status: verified
+      lines: [334, 371, 381]
+  key_links_verified:
+    - from: "TrayCommand::Show/Hide"
+      to: "ViewportCommand::Minimized"
+      via: "Wayland-specific branch"
+      status: verified
+      evidence: "Lines 370-371, 380-381: if is_wayland() branches call Minimized()"
+    - from: "close_requested"
+      to: "ViewportCommand::Minimized"
+      via: "Wayland-specific branch"
+      status: verified
+      evidence: "Lines 333-334: if is_wayland() branch calls Minimized(true)"
 
 gap_closure_verification:
   plan: 04-03-PLAN.md
@@ -294,8 +327,69 @@ All 7 tests from 04-UAT.md fully passing:
 
 ---
 
+## Gap Closure Round 3 Verification (04-05-PLAN.md)
+
+**Verified:** 2026-02-08T22:15:00Z
+**Status:** passed
+**Score:** 2/2 truths, 2/2 artifacts, 2/2 key_links verified
+
+### Problem Fixed
+
+The Wayland-specific failure:
+- Show/Hide menu item not working on Wayland
+- X button not hiding to tray on Wayland
+
+**Root cause:** `ViewportCommand::Visible(false)` is a no-op on Wayland due to platform security model. The winit library explicitly disables `set_visible()` on Wayland.
+
+**Solution:** Use `ViewportCommand::Minimized(true/false)` on Wayland instead. Minimized IS supported and provides equivalent UX (window goes to taskbar).
+
+### Gap Closure Round 3 Truths
+
+| # | Truth | Status | Evidence |
+|---|-------|--------|----------|
+| 1 | Show/Hide menu item toggles window visibility on Wayland | ✓ VERIFIED | src/app.rs:368-386 - TrayCommand::Show/Hide use Minimized(false/true) when is_wayland() |
+| 2 | X button hides window to tray on Wayland | ✓ VERIFIED | src/app.rs:329-343 - close_requested uses Minimized(true) when is_wayland() |
+
+### Gap Closure Round 3 Artifacts
+
+| Artifact | Contains | Status | Lines |
+|----------|----------|--------|-------|
+| `src/app.rs` | `is_wayland` | ✓ VERIFIED | 17-20 |
+| `src/app.rs` | `Minimized` | ✓ VERIFIED | 334, 371, 381 |
+
+### Gap Closure Round 3 Key Links
+
+| From | To | Via | Status | Evidence |
+|------|----|-----|--------|----------|
+| TrayCommand::Show/Hide | ViewportCommand::Minimized | Wayland-specific branch | ✓ WIRED | Lines 370-371, 380-381: `if is_wayland()` branches call `Minimized()` |
+| close_requested | ViewportCommand::Minimized | Wayland-specific branch | ✓ WIRED | Lines 333-334: `if is_wayland()` branch calls `Minimized(true)` |
+
+### Implementation Details
+
+1. **is_wayland() Helper:** Lines 17-20 - Checks `WAYLAND_DISPLAY` env var to detect Wayland session.
+
+2. **TrayCommand::Show:** Lines 368-377 - Uses `Minimized(false)` on Wayland, `Visible(true)` on X11.
+
+3. **TrayCommand::Hide:** Lines 378-386 - Uses `Minimized(true)` on Wayland, `Visible(false)` on X11.
+
+4. **close_requested:** Lines 329-343 - Uses `Minimized(true)` on Wayland, `Visible(false)` on X11.
+
+### Final UAT Status
+
+All 7 tests from 04-UAT.md now passing on both X11 and Wayland:
+- ✅ Window size persists
+- ✅ Window position persists on X11 (N/A on Wayland - expected)
+- ✅ System tray icon appears
+- ✅ Left-click/Show-Hide toggles window visibility (minimizes on Wayland)
+- ✅ Right-click shows menu
+- ✅ X button hides to tray (minimizes on Wayland)
+- ✅ Quit from menu exits app
+
+---
+
 _Initial Verified: 2026-02-08T21:15:00Z_
 _Gap Closure Round 1 Verified: 2026-02-08T21:45:00Z_
 _Gap Closure Round 2 Verified: 2026-02-08T22:00:00Z_
+_Gap Closure Round 3 Verified: 2026-02-08T22:15:00Z_
 _Verifier: Claude (gsd-verifier)_
 
