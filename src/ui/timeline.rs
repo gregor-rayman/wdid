@@ -1,8 +1,10 @@
 use egui::{ScrollArea, Ui};
 use egui_commonmark::CommonMarkCache;
 
+use super::calendar_column::{render_all_day_events, render_calendar_events};
 use super::entry::{render_entry, EntryAction};
-use super::state::DiaryViewState;
+use super::state::{Column, DiaryViewState};
+use crate::calendar::CalendarEvent;
 use crate::db::DiaryEntry;
 
 /// Result of timeline rendering, containing any pending actions.
@@ -16,81 +18,162 @@ pub struct TimelineActions {
 
 /// Render the timeline view showing entries.
 ///
-/// When `is_search_mode` is true, shows date prefixes for each entry.
+/// When `is_search_mode` is true, shows single-column search results with date prefixes.
+/// Otherwise, shows two-column layout: calendar events left, diary entries right.
 /// Returns `TimelineActions` with any pending save/delete operations.
 pub fn render_timeline(
     ui: &mut Ui,
     entries: &[DiaryEntry],
+    calendar_events: &[CalendarEvent],
+    all_day_events: &[CalendarEvent],
     state: &mut DiaryViewState,
     cache: &mut CommonMarkCache,
     is_search_mode: bool,
 ) -> TimelineActions {
     let mut actions = TimelineActions::default();
 
+    // In search mode, use single-column layout
+    if is_search_mode {
+        return render_search_results(ui, entries, state, cache);
+    }
+
+    // Normal mode: two-column layout with calendar and diary
+
+    // Render all-day events at the top (above both columns)
+    render_all_day_events(ui, all_day_events);
+
+    // Check for completely empty state
+    if entries.is_empty() && calendar_events.is_empty() {
+        ui.vertical_centered(|ui| {
+            ui.add_space(50.0);
+            ui.label(egui::RichText::new("No entries for this date").weak());
+            ui.add_space(10.0);
+            ui.label("Press Ctrl+N to create a new entry");
+        });
+        return actions;
+    }
+
+    // Two-column layout with synchronized scrolling
+    let initial_offset = state.scroll_offset;
+
+    // Use columns for side-by-side layout
+    ui.columns(2, |columns| {
+        // Left column: Calendar events
+        let calendar_response = {
+            let ui = &mut columns[0];
+
+            // Detect hover on this column
+            let column_rect = ui.available_rect_before_wrap();
+            if ui.rect_contains_pointer(column_rect) {
+                state.hovered_column = Some(Column::Calendar);
+            }
+
+            ScrollArea::vertical()
+                .id_salt("calendar_scroll")
+                .auto_shrink([false, false])
+                .vertical_scroll_offset(initial_offset)
+                .show(ui, |ui| {
+                    render_calendar_events(ui, calendar_events);
+                })
+        };
+
+        // Right column: Diary entries
+        let diary_response = {
+            let ui = &mut columns[1];
+
+            // Detect hover on this column
+            let column_rect = ui.available_rect_before_wrap();
+            if ui.rect_contains_pointer(column_rect) {
+                state.hovered_column = Some(Column::Diary);
+            }
+
+            ScrollArea::vertical()
+                .id_salt("diary_scroll")
+                .auto_shrink([false, false])
+                .vertical_scroll_offset(initial_offset)
+                .show(ui, |ui| {
+                    render_diary_entries(ui, entries, state, cache, &mut actions);
+                })
+        };
+
+        // Synchronize scroll: use the offset from the hovered/active column
+        let calendar_offset = calendar_response.state.offset.y;
+        let diary_offset = diary_response.state.offset.y;
+
+        // Update shared scroll offset based on which column changed
+        let new_offset = match state.hovered_column {
+            Some(Column::Calendar) => calendar_offset,
+            Some(Column::Diary) => diary_offset,
+            None => {
+                // No hover, use whichever changed
+                if (calendar_offset - initial_offset).abs() > 0.5 {
+                    calendar_offset
+                } else if (diary_offset - initial_offset).abs() > 0.5 {
+                    diary_offset
+                } else {
+                    initial_offset
+                }
+            }
+        };
+        state.scroll_offset = new_offset;
+    });
+
+    actions
+}
+
+/// Render search results in a single-column layout.
+fn render_search_results(
+    ui: &mut Ui,
+    entries: &[DiaryEntry],
+    state: &mut DiaryViewState,
+    cache: &mut CommonMarkCache,
+) -> TimelineActions {
+    let mut actions = TimelineActions::default();
+
     if entries.is_empty() {
         ui.vertical_centered(|ui| {
             ui.add_space(50.0);
-            if is_search_mode {
-                ui.label(egui::RichText::new("No matching entries").weak());
-                ui.add_space(10.0);
-                ui.label("Try a different search term");
-            } else {
-                ui.label(egui::RichText::new("No entries for this date").weak());
-                ui.add_space(10.0);
-                ui.label("Press Ctrl+N to create a new entry");
-            }
+            ui.label(egui::RichText::new("No matching entries").weak());
+            ui.add_space(10.0);
+            ui.label("Try a different search term");
         });
         return actions;
     }
 
     // Show search result count
-    if is_search_mode {
-        ui.horizontal(|ui| {
-            ui.label(
-                egui::RichText::new(format!("🔍 {} result{}", entries.len(), if entries.len() == 1 { "" } else { "s" }))
-                    .weak(),
-            );
-        });
-        ui.add_space(8.0);
-    }
+    ui.horizontal(|ui| {
+        ui.label(
+            egui::RichText::new(format!(
+                "🔍 {} result{}",
+                entries.len(),
+                if entries.len() == 1 { "" } else { "s" }
+            ))
+            .weak(),
+        );
+    });
+    ui.add_space(8.0);
 
     ScrollArea::vertical()
         .auto_shrink([false, false])
         .show(ui, |ui| {
-            let mut prev_time: Option<&str> = None;
             let mut prev_date: Option<&str> = None;
 
             for entry in entries {
-                // In search mode, show date headers when date changes
-                if is_search_mode {
-                    if prev_date != Some(&entry.date) {
-                        if prev_date.is_some() {
-                            ui.add_space(12.0);
-                            ui.separator();
-                        }
-                        ui.add_space(8.0);
-                        // Format date nicely (parse YYYY-MM-DD)
-                        let date_label = format_date_label(&entry.date);
-                        ui.label(egui::RichText::new(date_label).strong());
-                        prev_date = Some(&entry.date);
-                        prev_time = None; // Reset time gap tracking for new date
+                // Show date headers when date changes
+                if prev_date != Some(&entry.date) {
+                    if prev_date.is_some() {
+                        ui.add_space(12.0);
+                        ui.separator();
                     }
-                }
-
-                // Add visual gap for entries 30+ minutes apart (same date)
-                if !is_search_mode {
-                    if let Some(prev) = prev_time {
-                        if should_add_gap(prev, &entry.start_time) {
-                            ui.add_space(16.0);
-                            ui.separator();
-                        }
-                    }
+                    ui.add_space(8.0);
+                    let date_label = format_date_label(&entry.date);
+                    ui.label(egui::RichText::new(date_label).strong());
+                    prev_date = Some(&entry.date);
                 }
 
                 ui.add_space(8.0);
                 let action = render_entry(ui, state, entry, cache);
 
-                // Collect any actions
                 match action {
                     EntryAction::Save {
                         id,
@@ -105,14 +188,65 @@ pub fn render_timeline(
                     }
                     EntryAction::None => {}
                 }
-
-                prev_time = Some(&entry.start_time);
             }
 
             ui.add_space(16.0);
         });
 
     actions
+}
+
+/// Render diary entries in a scrollable column.
+fn render_diary_entries(
+    ui: &mut Ui,
+    entries: &[DiaryEntry],
+    state: &mut DiaryViewState,
+    cache: &mut CommonMarkCache,
+    actions: &mut TimelineActions,
+) {
+    if entries.is_empty() {
+        ui.vertical_centered(|ui| {
+            ui.add_space(20.0);
+            ui.label(egui::RichText::new("No diary entries").weak());
+            ui.add_space(10.0);
+            ui.label("Press Ctrl+N to create one");
+        });
+        return;
+    }
+
+    let mut prev_time: Option<&str> = None;
+
+    for entry in entries {
+        // Add visual gap for entries 30+ minutes apart
+        if let Some(prev) = prev_time {
+            if should_add_gap(prev, &entry.start_time) {
+                ui.add_space(16.0);
+                ui.separator();
+            }
+        }
+
+        ui.add_space(8.0);
+        let action = render_entry(ui, state, entry, cache);
+
+        match action {
+            EntryAction::Save {
+                id,
+                content,
+                start_time,
+                duration,
+            } => {
+                actions.save = Some((id, content, start_time, duration));
+            }
+            EntryAction::Delete(id) => {
+                actions.delete = Some(id);
+            }
+            EntryAction::None => {}
+        }
+
+        prev_time = Some(&entry.start_time);
+    }
+
+    ui.add_space(16.0);
 }
 
 /// Format a YYYY-MM-DD date string into a readable label.

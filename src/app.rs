@@ -338,8 +338,11 @@ impl eframe::App for WdidApp {
                     ui.label("calendar feeds in ~/.config/wdid/config.toml");
                 });
             } else {
-                // Take search results temporarily to avoid borrow conflicts
+                // Take search results and calendar events temporarily to avoid borrow conflicts
                 let search_results = self.view_state.search_results.take();
+                let calendar_events = std::mem::take(&mut self.view_state.calendar_events);
+                let all_day_events = std::mem::take(&mut self.view_state.all_day_events);
+
                 let entries_to_display: &[DiaryEntry] = if let Some(ref results) = search_results {
                     results.as_slice()
                 } else {
@@ -350,13 +353,17 @@ impl eframe::App for WdidApp {
                 let actions = crate::ui::timeline::render_timeline(
                     ui,
                     entries_to_display,
+                    &calendar_events,
+                    &all_day_events,
                     &mut self.view_state,
                     &mut self.markdown_cache,
                     is_search_mode,
                 );
 
-                // Restore search results
+                // Restore borrowed data
                 self.view_state.search_results = search_results;
+                self.view_state.calendar_events = calendar_events;
+                self.view_state.all_day_events = all_day_events;
 
                 // Handle save action
                 if let Some((id, content, start_time, duration)) = actions.save {
