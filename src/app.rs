@@ -124,10 +124,35 @@ impl eframe::App for WdidApp {
 
             // Header with date navigation and search
             crate::ui::header::render_header(ui, &mut self.view_state);
+
+            // Handle search query changes
+            if self.view_state.search_changed() {
+                let query = self.view_state.search_query.trim();
+                if query.is_empty() {
+                    // Clear search results, return to day view
+                    self.view_state.search_results = None;
+                } else if query.starts_with('#') && query.len() > 1 {
+                    // Hashtag search (strip the #)
+                    match self.db.search_by_hashtag(&query[1..]) {
+                        Ok(results) => self.view_state.search_results = Some(results),
+                        Err(e) => eprintln!("Search error: {}", e),
+                    }
+                } else {
+                    // Full-text search
+                    match self.db.search_by_text(query) {
+                        Ok(results) => self.view_state.search_results = Some(results),
+                        Err(e) => eprintln!("Search error: {}", e),
+                    }
+                }
+            }
+
             ui.separator();
 
-            // Show welcome message on first run (only when no entries exist)
-            if self.first_run && self.entries.is_empty() {
+            // Check if we're in search mode
+            let is_search_mode = self.view_state.search_results.is_some();
+
+            // Show welcome message on first run (only when no entries and not searching)
+            if self.first_run && self.entries.is_empty() && !is_search_mode {
                 ui.vertical_centered(|ui| {
                     ui.add_space(50.0);
                     ui.heading("Welcome to wdid!");
@@ -136,13 +161,25 @@ impl eframe::App for WdidApp {
                     ui.label("calendar feeds in ~/.config/wdid/config.toml");
                 });
             } else {
-                // Render the timeline
+                // Take search results temporarily to avoid borrow conflicts
+                let search_results = self.view_state.search_results.take();
+                let entries_to_display: &[DiaryEntry] = if let Some(ref results) = search_results {
+                    results.as_slice()
+                } else {
+                    self.entries.as_slice()
+                };
+
+                // Render the timeline (or search results)
                 let actions = crate::ui::timeline::render_timeline(
                     ui,
-                    &self.entries,
+                    entries_to_display,
                     &mut self.view_state,
                     &mut self.markdown_cache,
+                    is_search_mode,
                 );
+
+                // Restore search results
+                self.view_state.search_results = search_results;
 
                 // Handle save action
                 if let Some((id, content, start_time, duration)) = actions.save {

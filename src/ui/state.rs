@@ -26,6 +26,8 @@ pub struct DiaryViewState {
     pub edit_focus_set: bool,
     /// Current search query
     pub search_query: String,
+    /// Previous search query (for change detection)
+    pub prev_search_query: String,
     /// Search results, if a search has been performed
     pub search_results: Option<Vec<DiaryEntry>>,
 }
@@ -47,7 +49,19 @@ impl DiaryViewState {
             duration_buffer: String::new(),
             edit_focus_set: false,
             search_query: String::new(),
+            prev_search_query: String::new(),
             search_results: None,
+        }
+    }
+
+    /// Check if search query has changed and update tracking.
+    /// Returns true if search should be performed.
+    pub fn search_changed(&mut self) -> bool {
+        if self.search_query != self.prev_search_query {
+            self.prev_search_query = self.search_query.clone();
+            true
+        } else {
+            false
         }
     }
 }
