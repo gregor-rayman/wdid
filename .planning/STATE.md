@@ -7,36 +7,36 @@
 
 **Core Value:** See your day at a glance and capture what you did — calendar events and personal notes unified in a single timeline.
 
-**Current Focus:** Phase 4 In Progress - System Integration
+**Current Focus:** Phase 4 COMPLETE - System Integration
 
 ## Current Position
 
 | Dimension | Value |
 |-----------|-------|
 | Phase | 4 of 5 (04-system) |
-| Plan | 01 of 02 complete |
-| Status | In progress |
-| Last Activity | 2026-02-08 - Completed 04-01-PLAN.md (window persistence) |
+| Plan | 02 of 02 complete |
+| Status | Phase complete |
+| Last Activity | 2026-02-08 - Completed 04-02-PLAN.md (system tray) |
 
 **Overall Progress:**
 ```
 Phase 1 [Foundation]    ██████████ 100% (3/3 plans) ✓
 Phase 2 [Core GUI]      ██████████ 100% (4/4 plans) ✓
 Phase 3 [Calendar]      ██████████ 100% (7/7 plans) ✓
-Phase 4 [System]        █████░░░░░ 50% (1/2 plans)
+Phase 4 [System]        ██████████ 100% (2/2 plans) ✓
 Phase 5 [Export]        ░░░░░░░░░░ 0%
 ─────────────────────────────────────
-Total                   ██████████ ~79%
+Total                   █████████░ ~88%
 ```
 
 ## Performance Metrics
 
 | Metric | Value |
 |--------|-------|
-| Plans Completed | 15 |
+| Plans Completed | 16 |
 | Plans Failed | 0 |
 | Avg Attempts per Plan | 1 |
-| Requirements Complete | 26/29 |
+| Requirements Complete | 28/29 |
 
 ## Accumulated Context
 
@@ -89,6 +89,9 @@ Total                   ██████████ ~79%
 | HashSet for event UID lookup | Efficient orphan detection by checking linked UIDs exist | 03-07 |
 | Periodic window save | Save every 5 seconds if changed; on_exit lacks viewport context | 04-01 |
 | WAYLAND_DISPLAY detection | Skip position persistence on Wayland (compositor controls it) | 04-01 |
+| GTK event loop in dedicated thread | tray-icon on Linux requires GTK main loop; isolate from UI thread | 04-02 |
+| AtomicBool for visibility sync | Simple thread-safe state for left-click toggle visibility | 04-02 |
+| mpsc channel for tray commands | Consistent with calendar worker pattern; decouples tray from UI | 04-02 |
 
 ### Technical Discoveries
 
@@ -96,6 +99,7 @@ Total                   ██████████ ~79%
 - Blocking GUI: Never call blocking ops in update() or view()
 - Wayland: Cannot read window position (by design); size-only persistence
 - System tray: GNOME requires AppIndicator extension; provide fallback
+- tray-icon: Uses libappindicator on Linux, requires GTK event loop
 
 ### Session Notes
 
@@ -120,7 +124,7 @@ Total                   ██████████ ~79%
 - [x] Diary-event linking (03-07)
 - [x] Plan Phase 4: System Integration
 - [x] Window persistence (04-01)
-- [ ] System tray (04-02)
+- [x] System tray (04-02)
 - [ ] Phase 5: Export capabilities
 
 ### Blockers
@@ -133,15 +137,14 @@ Total                   ██████████ ~79%
 
 ## Session Continuity
 
-**Last Session:** 2026-02-08 - Completed 04-01 window persistence
+**Last Session:** 2026-02-08 - Completed 04-02 system tray
 
-**Stopped At:** 04-01-PLAN.md complete
-**Resume File:** .planning/phases/04-system/04-02-PLAN.md
+**Stopped At:** 04-02-PLAN.md complete (Phase 4 COMPLETE)
+**Resume File:** None - Phase 4 complete
 
 **Next Actions:**
-1. Execute 04-02-PLAN.md (System tray)
-2. Complete Phase 4: System Integration
-3. Continue to Phase 5: Export capabilities
+1. Plan Phase 5: Export capabilities
+2. Execute Phase 5 plans
 
 **Context to Preserve:**
 - Research recommends foundation-first approach
@@ -188,6 +191,14 @@ Total                   ██████████ ~79%
 - Event snapshot format "color:summary" stored for orphan display
 - HashSet<String> for efficient calendar event UID lookup
 - Colored left border for linked entries with parse_color helper
+- System tray: src/tray.rs with TrayIconBuilder, TrayCommand enum
+- spawn_tray() returns Receiver<TrayCommand> for UI thread polling
+- GTK event loop in dedicated thread (Linux-specific)
+- AtomicBool VISIBLE for thread-safe visibility state sync
+- set_visible() function to update visibility from main thread
+- Close-to-tray: X button hides instead of quitting
+- Left-click tray toggles visibility, right-click shows menu
+- Tray menu: "Show" and "Quit" items
 
 ---
 *State updated: 2026-02-08*
