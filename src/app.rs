@@ -3,6 +3,7 @@ use eframe::egui;
 use crate::config::{Config, ConfigResult};
 use crate::db::Database;
 use crate::paths::AppPaths;
+use crate::ui::DiaryViewState;
 
 #[allow(dead_code)]
 pub struct WdidApp {
@@ -10,6 +11,7 @@ pub struct WdidApp {
     config: Config,
     config_warning: Option<String>,
     first_run: bool,
+    view_state: DiaryViewState,
 }
 
 impl WdidApp {
@@ -34,6 +36,7 @@ impl WdidApp {
             config,
             config_warning,
             first_run,
+            view_state: DiaryViewState::default(),
         }
     }
 }
@@ -47,6 +50,10 @@ impl eframe::App for WdidApp {
                 ui.separator();
             }
 
+            // Header with date navigation and search
+            crate::ui::header::render_header(ui, &mut self.view_state);
+            ui.separator();
+
             // Show welcome message on first run
             if self.first_run {
                 ui.vertical_centered(|ui| {
@@ -57,8 +64,7 @@ impl eframe::App for WdidApp {
                     ui.label("calendar feeds in ~/.config/wdid/config.toml");
                 });
             } else {
-                ui.heading("wdid");
-                ui.label("Ready for diary entries (Phase 2)");
+                ui.label("Ready for diary entries");
             }
         });
     }
