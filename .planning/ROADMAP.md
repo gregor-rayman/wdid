@@ -122,6 +122,12 @@ Plans:
 
 **Dependencies:** Phase 2 (window exists)
 
+**Plans:** 2 plans
+
+Plans:
+- [ ] 04-01-PLAN.md — Window size and position persistence
+- [ ] 04-02-PLAN.md — System tray with show/hide, menu, close-to-tray
+
 **Requirements:**
 - SYS-01: App remembers window size and position between sessions
 - SYS-03: System tray icon with left-click to show/hide window
