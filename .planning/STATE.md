@@ -14,29 +14,29 @@
 | Dimension | Value |
 |-----------|-------|
 | Phase | 3 of 5 (03-calendar) |
-| Plan | 05 of 07 complete |
+| Plan | 06 of 07 complete |
 | Status | In progress |
-| Last Activity | 2026-02-08 - Completed 03-05-PLAN.md (two-column UI) |
+| Last Activity | 2026-02-08 - Completed 03-06-PLAN.md (refresh controls) |
 
 **Overall Progress:**
 ```
 Phase 1 [Foundation]    ██████████ 100% (3/3 plans) ✓
 Phase 2 [Core GUI]      ██████████ 100% (4/4 plans) ✓
-Phase 3 [Calendar]      ███████░░░ 71% (5/7 plans)
+Phase 3 [Calendar]      ████████░░ 86% (6/7 plans)
 Phase 4 [System]        ░░░░░░░░░░ 0%
 Phase 5 [Export]        ░░░░░░░░░░ 0%
 ─────────────────────────────────────
-Total                   ████████░░ ~63%
+Total                   ████████░░ ~68%
 ```
 
 ## Performance Metrics
 
 | Metric | Value |
 |--------|-------|
-| Plans Completed | 12 |
+| Plans Completed | 13 |
 | Plans Failed | 0 |
 | Avg Attempts per Plan | 1 |
-| Requirements Complete | 20/29 |
+| Requirements Complete | 22/29 |
 
 ## Accumulated Context
 
@@ -82,6 +82,8 @@ Total                   ████████░░ ~63%
 | Two-column ui.columns layout | Calendar left, diary right with synchronized scrolling | 03-05 |
 | Hover-based scroll priority | Track hovered_column to determine which scroll to sync from | 03-05 |
 | std::mem::take for borrows | Temporarily move Vec data out of state to avoid borrow conflicts | 03-05 |
+| HeaderAction enum pattern | Header buttons return action enums for clean separation | 03-06 |
+| 1-hour auto-refresh interval | Reasonable default to keep calendars current without excessive requests | 03-06 |
 
 ### Technical Discoveries
 
@@ -109,6 +111,7 @@ Total                   ████████░░ ~63%
 - [x] Plan Phase 3: Calendar Integration
 - [x] iCal feed parsing
 - [x] Two-column timeline layout
+- [x] Refresh controls (manual + auto)
 
 ### Blockers
 
@@ -120,15 +123,15 @@ Total                   ████████░░ ~63%
 
 ## Session Continuity
 
-**Last Session:** 2026-02-08 - Completed 03-05 two-column UI
+**Last Session:** 2026-02-08 - Completed 03-06 refresh controls
 
-**Stopped At:** 03-05-PLAN.md complete
+**Stopped At:** 03-06-PLAN.md complete
 **Resume File:** .planning/phases/03-calendar/
 
 **Next Actions:**
-1. Execute 03-06-PLAN.md: Event interactions
-2. Execute 03-07-PLAN.md: Header enhancements
-3. Continue Phase 3: Calendar Integration
+1. Execute 03-07-PLAN.md: Event interactions (in parallel)
+2. Complete Phase 3: Calendar Integration
+3. Begin Phase 4: System Integration
 
 **Context to Preserve:**
 - Research recommends foundation-first approach
@@ -140,8 +143,9 @@ Total                   ████████░░ ~63%
 - Calendar CRUD: save_calendar_event, get_calendar_events_for_date, clear_feed_events
 - Config module provides Config, ConfigResult, load_config exports
 - WdidApp struct wires db + config together, implements eframe::App
-- UI module provides DiaryViewState, render_header, render_timeline, render_entry
+- UI module provides DiaryViewState, render_header, render_timeline, render_entry, HeaderAction
 - EntryAction enum enables clean action handling from entry rendering
+- HeaderAction enum enables refresh button actions from header
 - Click-to-edit with Escape/lost_focus save triggers
 - Context menu delete and delete-on-empty content implemented
 - Duration editing with calculated end time display
@@ -162,6 +166,9 @@ Total                   ████████░░ ~63%
 - Column enum and scroll_offset/hovered_column fields in DiaryViewState
 - render_calendar_events() and render_all_day_events() available in calendar_column module
 - std::mem::take() pattern used to avoid borrow conflicts with calendar events
+- trigger_calendar_refresh() method for manual refresh
+- AUTO_REFRESH_INTERVAL (1 hour) for automatic calendar refresh
+- last_refresh_check field tracks hourly auto-refresh timing
 
 ---
 *State updated: 2026-02-08*
