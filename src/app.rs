@@ -1,0 +1,66 @@
+use eframe::egui;
+
+use crate::config::{Config, ConfigResult};
+use crate::db::Database;
+use crate::paths::AppPaths;
+
+#[allow(dead_code)]
+pub struct WdidApp {
+    db: Database,
+    config: Config,
+    config_warning: Option<String>,
+    first_run: bool,
+}
+
+impl WdidApp {
+    pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
+        // Set up paths
+        let paths = AppPaths::new().expect("Could not determine app paths");
+        paths.ensure_dirs().expect("Could not create app directories");
+
+        // Load config
+        let (config, config_warning, first_run) =
+            match crate::config::load_config(&paths.config_file) {
+                ConfigResult::Loaded(c) => (c, None, false),
+                ConfigResult::Created(c) => (c, None, true),
+                ConfigResult::ParseError(msg) => (Config::default(), Some(msg), false),
+            };
+
+        // Open database
+        let db = Database::open(&paths.database_file).expect("Could not open database");
+
+        Self {
+            db,
+            config,
+            config_warning,
+            first_run,
+        }
+    }
+}
+
+impl eframe::App for WdidApp {
+    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        egui::CentralPanel::default().show(ctx, |ui| {
+            // Show config warning if present
+            if let Some(warning) = &self.config_warning {
+                ui.colored_label(egui::Color32::YELLOW, format!("⚠ {}", warning));
+                ui.separator();
+            }
+
+            // Show welcome message on first run
+            if self.first_run {
+                ui.vertical_centered(|ui| {
+                    ui.add_space(50.0);
+                    ui.heading("Welcome to wdid!");
+                    ui.add_space(10.0);
+                    ui.label("Start by adding a diary entry, or configure");
+                    ui.label("calendar feeds in ~/.config/wdid/config.toml");
+                });
+            } else {
+                ui.heading("wdid");
+                ui.label("Ready for diary entries (Phase 2)");
+            }
+        });
+    }
+}
+
