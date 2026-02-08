@@ -9,7 +9,7 @@ use crate::calendar::{parse_ical, spawn_calendar_worker, CalendarCommand, Calend
 use crate::config::{Config, ConfigResult};
 use crate::db::{CachedFeed, Database, DiaryEntry, NewDiaryEntry};
 use crate::paths::AppPaths;
-use crate::ui::{snap_to_15_minutes, DiaryViewState};
+use crate::ui::{snap_to_15_minutes, DiaryViewState, HeaderAction};
 
 #[allow(dead_code)]
 pub struct WdidApp {
@@ -232,6 +232,16 @@ impl WdidApp {
         // Still load cached events (stale data is better than no data)
         self.load_calendar_events();
     }
+
+    /// Trigger a manual calendar refresh (if not already refreshing).
+    fn trigger_calendar_refresh(&mut self) {
+        if !self.view_state.calendar_refreshing && !self.config.calendars.is_empty() {
+            self.view_state.calendar_refreshing = true;
+            let _ = self
+                .calendar_tx
+                .send(CalendarCommand::RefreshAll(self.config.calendars.clone()));
+        }
+    }
 }
 
 impl eframe::App for WdidApp {
@@ -299,8 +309,15 @@ impl eframe::App for WdidApp {
                 ui.separator();
             }
 
-            // Header with date navigation and search
-            crate::ui::header::render_header(ui, &mut self.view_state);
+            // Header with date navigation, search, and refresh button
+            let has_calendars = !self.config.calendars.is_empty();
+            let header_action =
+                crate::ui::header::render_header(ui, &mut self.view_state, has_calendars);
+
+            // Handle header actions
+            if header_action == HeaderAction::RefreshCalendars {
+                self.trigger_calendar_refresh();
+            }
 
             // Handle search query changes
             if self.view_state.search_changed() {
