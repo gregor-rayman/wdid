@@ -1,6 +1,14 @@
-use chrono::{Local, NaiveDate};
+use chrono::{Local, NaiveDate, NaiveTime, Timelike};
 
 use crate::db::DiaryEntry;
+
+/// Snap a time to the nearest 15-minute interval.
+pub fn snap_to_15_minutes(time: NaiveTime) -> NaiveTime {
+    let minutes = time.minute();
+    let snapped = ((minutes + 7) / 15) * 15;
+    let snapped = snapped.min(45); // Cap at :45, don't round to next hour
+    NaiveTime::from_hms_opt(time.hour(), snapped, 0).unwrap()
+}
 
 /// State for the diary view, tracking the current date and editing context.
 pub struct DiaryViewState {
