@@ -34,12 +34,12 @@
 
 ### System Integration
 
-- [ ] **SYS-01**: App remembers window size and position between sessions
+- [x] **SYS-01**: App remembers window size and position between sessions
 - [x] **SYS-02**: Data stored locally in SQLite database
-- [ ] **SYS-03**: System tray icon with left-click to show/hide window
-- [ ] **SYS-04**: System tray right-click opens menu with options
-- [ ] **SYS-05**: Closing window minimizes to system tray
-- [ ] **SYS-06**: Quit option available in tray menu
+- [x] **SYS-03**: System tray icon with left-click to show/hide window
+- [x] **SYS-04**: System tray right-click opens menu with options
+- [x] **SYS-05**: Closing window minimizes to system tray
+- [x] **SYS-06**: Quit option available in tray menu
 - [x] **SYS-07**: Config file at XDG location (~/.config/wdid/config.toml)
 
 ### Export
@@ -103,12 +103,12 @@
 | NAV-02 | Phase 2 | Complete |
 | SRCH-01 | Phase 2 | Complete |
 | SRCH-02 | Phase 2 | Complete |
-| SYS-01 | Phase 4 | Pending |
+| SYS-01 | Phase 4 | Complete |
 | SYS-02 | Phase 1 | Complete |
-| SYS-03 | Phase 4 | Pending |
-| SYS-04 | Phase 4 | Pending |
-| SYS-05 | Phase 4 | Pending |
-| SYS-06 | Phase 4 | Pending |
+| SYS-03 | Phase 4 | Complete |
+| SYS-04 | Phase 4 | Complete |
+| SYS-05 | Phase 4 | Complete |
+| SYS-06 | Phase 4 | Complete |
 | SYS-07 | Phase 1 | Complete |
 | EXP-01 | Phase 5 | Pending |
 | EXP-02 | Phase 5 | Pending |
