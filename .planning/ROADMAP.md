@@ -153,6 +153,13 @@ Plans:
 
 **Dependencies:** Phase 2 (diary entries), Phase 3 (calendar events for context)
 
+**Plans:** 3 plans
+
+Plans:
+- [ ] 05-01-PLAN.md — Export foundation (dependencies, Serialize derives, date range query)
+- [ ] 05-02-PLAN.md — Export formatters (Markdown, JSON, standup, weekly retro)
+- [ ] 05-03-PLAN.md — Export UI and wiring (menu, clipboard, file save)
+
 **Requirements:**
 - EXP-01: User can export entries to Markdown format
 - EXP-02: User can export entries to JSON format
