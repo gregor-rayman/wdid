@@ -1,5 +1,8 @@
-use chrono::{Local, NaiveDate, NaiveTime, Timelike};
+use std::collections::HashMap;
 
+use chrono::{DateTime, Local, NaiveDate, NaiveTime, Timelike};
+
+use crate::calendar::CalendarEvent;
 use crate::db::DiaryEntry;
 
 /// Snap a time to the nearest 15-minute interval.
@@ -30,6 +33,17 @@ pub struct DiaryViewState {
     pub prev_search_query: String,
     /// Search results, if a search has been performed
     pub search_results: Option<Vec<DiaryEntry>>,
+
+    /// Calendar events for the current date (timed events)
+    pub calendar_events: Vec<CalendarEvent>,
+    /// All-day events for the current date (separate for header display)
+    pub all_day_events: Vec<CalendarEvent>,
+    /// Track if calendar refresh is in progress
+    pub calendar_refreshing: bool,
+    /// Per-feed error messages (url -> error)
+    pub feed_errors: HashMap<String, String>,
+    /// Per-feed last refresh times (url -> timestamp)
+    pub feed_last_refresh: HashMap<String, DateTime<Local>>,
 }
 
 impl Default for DiaryViewState {
@@ -51,6 +65,11 @@ impl DiaryViewState {
             search_query: String::new(),
             prev_search_query: String::new(),
             search_results: None,
+            calendar_events: Vec::new(),
+            all_day_events: Vec::new(),
+            calendar_refreshing: false,
+            feed_errors: HashMap::new(),
+            feed_last_refresh: HashMap::new(),
         }
     }
 
