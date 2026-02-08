@@ -7,36 +7,36 @@
 
 **Core Value:** See your day at a glance and capture what you did — calendar events and personal notes unified in a single timeline.
 
-**Current Focus:** Phase 3 Complete - Calendar Integration
+**Current Focus:** Phase 4 In Progress - System Integration
 
 ## Current Position
 
 | Dimension | Value |
 |-----------|-------|
-| Phase | 3 of 5 (03-calendar) |
-| Plan | 07 of 07 complete |
-| Status | Phase Complete ✓ |
-| Last Activity | 2026-02-08 - Completed 03-07-PLAN.md (diary-event linking) |
+| Phase | 4 of 5 (04-system) |
+| Plan | 01 of 02 complete |
+| Status | In progress |
+| Last Activity | 2026-02-08 - Completed 04-01-PLAN.md (window persistence) |
 
 **Overall Progress:**
 ```
 Phase 1 [Foundation]    ██████████ 100% (3/3 plans) ✓
 Phase 2 [Core GUI]      ██████████ 100% (4/4 plans) ✓
 Phase 3 [Calendar]      ██████████ 100% (7/7 plans) ✓
-Phase 4 [System]        ░░░░░░░░░░ 0%
+Phase 4 [System]        █████░░░░░ 50% (1/2 plans)
 Phase 5 [Export]        ░░░░░░░░░░ 0%
 ─────────────────────────────────────
-Total                   ██████████ ~74%
+Total                   ██████████ ~79%
 ```
 
 ## Performance Metrics
 
 | Metric | Value |
 |--------|-------|
-| Plans Completed | 14 |
+| Plans Completed | 15 |
 | Plans Failed | 0 |
 | Avg Attempts per Plan | 1 |
-| Requirements Complete | 25/29 |
+| Requirements Complete | 26/29 |
 
 ## Accumulated Context
 
@@ -87,6 +87,8 @@ Total                   ██████████ ~74%
 | CalendarAction enum pattern | Calendar events return action enums for add-note flow | 03-07 |
 | Event snapshot format | Simple "color:summary" string for orphan display without JSON | 03-07 |
 | HashSet for event UID lookup | Efficient orphan detection by checking linked UIDs exist | 03-07 |
+| Periodic window save | Save every 5 seconds if changed; on_exit lacks viewport context | 04-01 |
+| WAYLAND_DISPLAY detection | Skip position persistence on Wayland (compositor controls it) | 04-01 |
 
 ### Technical Discoveries
 
@@ -116,8 +118,10 @@ Total                   ██████████ ~74%
 - [x] Two-column timeline layout
 - [x] Refresh controls (manual + auto)
 - [x] Diary-event linking (03-07)
-- [ ] Plan Phase 4: System Integration
-- [ ] Begin Phase 4: System Integration
+- [x] Plan Phase 4: System Integration
+- [x] Window persistence (04-01)
+- [ ] System tray (04-02)
+- [ ] Phase 5: Export capabilities
 
 ### Blockers
 
@@ -129,20 +133,23 @@ Total                   ██████████ ~74%
 
 ## Session Continuity
 
-**Last Session:** 2026-02-08 - Completed 03-07 diary-event linking
+**Last Session:** 2026-02-08 - Completed 04-01 window persistence
 
-**Stopped At:** 03-07-PLAN.md complete (Phase 3 Complete)
-**Resume File:** .planning/phases/04-system/
+**Stopped At:** 04-01-PLAN.md complete
+**Resume File:** .planning/phases/04-system/04-02-PLAN.md
 
 **Next Actions:**
-1. Plan Phase 4: System Integration
-2. Begin Phase 4: System tray, notifications
+1. Execute 04-02-PLAN.md (System tray)
+2. Complete Phase 4: System Integration
 3. Continue to Phase 5: Export capabilities
 
 **Context to Preserve:**
 - Research recommends foundation-first approach
 - calcard is less battle-tested; may need fallback to icalendar crate
 - Linux DE fragmentation affects system tray (Phase 4)
+- Window state persistence: WindowState struct, load_window_state(), save_window_state()
+- Periodic save every 5 seconds in update() loop via save_window_state_if_changed()
+- WAYLAND_DISPLAY env var check for platform-aware position handling
 - AppError and AppPaths modules now available for use
 - Database module provides Database, DiaryEntry, NewDiaryEntry, CachedFeed exports
 - CRUD operations ready: save_entry, get_entries_for_date, update_entry_full, delete_entry
