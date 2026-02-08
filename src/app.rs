@@ -11,6 +11,7 @@ use crate::calendar::{parse_ical, spawn_calendar_worker, CalendarCommand, Calend
 use crate::config::{Config, ConfigResult, WindowState};
 use crate::db::{CachedFeed, Database, DiaryEntry, NewDiaryEntry};
 use crate::paths::AppPaths;
+use crate::tray::TrayCommand;
 use crate::ui::{snap_to_15_minutes, CalendarAction, DiaryViewState, HeaderAction};
 
 /// Auto-refresh interval for calendar feeds (1 hour)
@@ -47,10 +48,16 @@ pub struct WdidApp {
     last_saved_window_state: WindowState,
     /// Last time window state was saved
     last_window_save: Instant,
+    /// Channel to receive commands from system tray
+    tray_rx: Receiver<TrayCommand>,
 }
 
 impl WdidApp {
-    pub fn new(_cc: &eframe::CreationContext<'_>, paths: AppPaths) -> Self {
+    pub fn new(
+        _cc: &eframe::CreationContext<'_>,
+        paths: AppPaths,
+        tray_rx: Receiver<TrayCommand>,
+    ) -> Self {
         // Load config
         let (config, config_warning, first_run) =
             match crate::config::load_config(&paths.config_file) {
@@ -82,6 +89,7 @@ impl WdidApp {
             window_state_file: paths.window_state_file,
             last_saved_window_state: WindowState::default(),
             last_window_save: Instant::now(),
+            tray_rx,
         }
     }
 

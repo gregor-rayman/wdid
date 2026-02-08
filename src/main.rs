@@ -4,16 +4,23 @@ mod config;
 mod db;
 mod error;
 mod paths;
+mod tray;
 mod ui;
 
 use app::WdidApp;
 use eframe::egui;
 use paths::AppPaths;
 
+/// Embedded tray icon (32x32 PNG).
+const TRAY_ICON: &[u8] = include_bytes!("../assets/icon.png");
+
 fn main() -> eframe::Result<()> {
     // Set up paths
     let paths = AppPaths::new().expect("Could not determine app paths");
     paths.ensure_dirs().expect("Could not create app directories");
+
+    // Spawn system tray (before creating window)
+    let tray_rx = tray::spawn_tray(TRAY_ICON);
 
     // Load saved window state
     let window_state = crate::config::load_window_state(&paths.window_state_file);
@@ -40,6 +47,6 @@ fn main() -> eframe::Result<()> {
     eframe::run_native(
         "wdid",
         options,
-        Box::new(move |cc| Ok(Box::new(WdidApp::new(cc, paths)))),
+        Box::new(move |cc| Ok(Box::new(WdidApp::new(cc, paths, tray_rx)))),
     )
 }
