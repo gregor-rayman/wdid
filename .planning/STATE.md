@@ -7,36 +7,36 @@
 
 **Core Value:** See your day at a glance and capture what you did — calendar events and personal notes unified in a single timeline.
 
-**Current Focus:** Phase 2: Core GUI - Timeline View & Entry Creation complete
+**Current Focus:** Phase 2: Core GUI - Entry Editing complete
 
 ## Current Position
 
 | Dimension | Value |
 |-----------|-------|
 | Phase | 2 of 5 (02-core-gui) |
-| Plan | 02 of 05 complete |
+| Plan | 03 of 05 complete |
 | Status | In progress |
-| Last Activity | 2026-02-08 - Completed 02-02-PLAN.md |
+| Last Activity | 2026-02-08 - Completed 02-03-PLAN.md |
 
 **Overall Progress:**
 ```
 Phase 1 [Foundation]    ██████████ 100% (3/3 plans) ✓
-Phase 2 [Core GUI]      ████░░░░░░ 40% (2/5 plans)
+Phase 2 [Core GUI]      ██████░░░░ 60% (3/5 plans)
 Phase 3 [Calendar]      ░░░░░░░░░░ 0%
 Phase 4 [System]        ░░░░░░░░░░ 0%
 Phase 5 [Export]        ░░░░░░░░░░ 0%
 ─────────────────────────────────────
-Total                   ████░░░░░░ ~33%
+Total                   █████░░░░░ ~40%
 ```
 
 ## Performance Metrics
 
 | Metric | Value |
 |--------|-------|
-| Plans Completed | 5 |
+| Plans Completed | 6 |
 | Plans Failed | 0 |
 | Avg Attempts per Plan | 1 |
-| Requirements Complete | 9/29 |
+| Requirements Complete | 13/29 |
 
 ## Accumulated Context
 
@@ -61,6 +61,9 @@ Total                   ████░░░░░░ ~33%
 | snap_to_15_minutes rounding | Rounds to nearest quarter hour, caps at :45 | 02-02 |
 | CommonMarkViewer for markdown | egui_commonmark@0.21 renders entry content | 02-02 |
 | modifiers.command for Ctrl | Cross-platform: Ctrl on Linux/Windows, Cmd on Mac | 02-02 |
+| EntryAction enum pattern | Clean separation between UI rendering and state mutation | 02-03 |
+| Escape/lost_focus save triggers | Common inline editing pattern, matches user expectations | 02-03 |
+| Delete-on-empty content | Natural way to remove entries without explicit delete | 02-03 |
 
 ### Technical Discoveries
 
@@ -83,7 +86,7 @@ Total                   ████░░░░░░ ~33%
 - [x] Plan Phase 1 in detail
 - [x] Begin Phase 2: Core GUI (02-01)
 - [x] Timeline view with entries (02-02)
-- [ ] Entry creation/editing (02-03)
+- [x] Entry creation/editing (02-03)
 - [ ] Settings panel (02-04)
 - [ ] Search functionality (02-05)
 
@@ -97,15 +100,15 @@ Total                   ████░░░░░░ ~33%
 
 ## Session Continuity
 
-**Last Session:** 2026-02-08 - Completed 02-02-PLAN.md (Timeline View & Entry Creation)
+**Last Session:** 2026-02-08 - Completed 02-03-PLAN.md (Entry Editing)
 
-**Stopped At:** Completed 02-02-PLAN.md
-**Resume File:** .planning/phases/02-core-gui/02-03-PLAN.md
+**Stopped At:** Completed 02-03-PLAN.md
+**Resume File:** .planning/phases/02-core-gui/02-04-PLAN.md
 
 **Next Actions:**
-1. Implement diary entry editing UI (02-03)
-2. Build settings panel (02-04)
-3. Implement search functionality (02-05)
+1. Build settings panel (02-04)
+2. Implement search functionality (02-05)
+3. Begin Phase 3: Calendar Integration
 
 **Context to Preserve:**
 - Research recommends foundation-first approach
@@ -113,13 +116,14 @@ Total                   ████░░░░░░ ~33%
 - Linux DE fragmentation affects system tray (Phase 4)
 - AppError and AppPaths modules now available for use
 - Database module provides Database, DiaryEntry, NewDiaryEntry exports
-- CRUD operations ready: save_entry, get_entries_for_date, update_entry, delete_entry
+- CRUD operations ready: save_entry, get_entries_for_date, update_entry_full, delete_entry
 - Config module provides Config, ConfigResult, load_config exports
 - WdidApp struct wires db + config together, implements eframe::App
-- UI module provides DiaryViewState, render_header, render_timeline, render_entry_view
-- Timeline displays entries from current_date via get_entries_for_date
-- Ctrl+N creates new entries with 15-minute snapped times
-- snap_to_15_minutes helper available for time operations
+- UI module provides DiaryViewState, render_header, render_timeline, render_entry
+- EntryAction enum enables clean action handling from entry rendering
+- Click-to-edit with Escape/lost_focus save triggers
+- Context menu delete and delete-on-empty content implemented
+- Duration editing with calculated end time display
 
 ---
 *State updated: 2026-02-08*
