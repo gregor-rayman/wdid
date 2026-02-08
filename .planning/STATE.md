@@ -7,36 +7,36 @@
 
 **Core Value:** See your day at a glance and capture what you did — calendar events and personal notes unified in a single timeline.
 
-**Current Focus:** Phase 1 COMPLETE - Ready for Phase 2: Core GUI
+**Current Focus:** Phase 2: Core GUI - UI Module & Header complete
 
 ## Current Position
 
 | Dimension | Value |
 |-----------|-------|
-| Phase | 1 of 5 (01-foundation) COMPLETE |
-| Plan | 03 of 03 complete |
-| Status | Phase complete |
-| Last Activity | 2026-02-08 - Completed 01-03-PLAN.md |
+| Phase | 2 of 5 (02-core-gui) |
+| Plan | 01 of 05 complete |
+| Status | In progress |
+| Last Activity | 2026-02-08 - Completed 02-01-PLAN.md |
 
 **Overall Progress:**
 ```
 Phase 1 [Foundation]    ██████████ 100% (3/3 plans) ✓
-Phase 2 [Core GUI]      ░░░░░░░░░░ 0%
+Phase 2 [Core GUI]      ██░░░░░░░░ 20% (1/5 plans)
 Phase 3 [Calendar]      ░░░░░░░░░░ 0%
 Phase 4 [System]        ░░░░░░░░░░ 0%
 Phase 5 [Export]        ░░░░░░░░░░ 0%
 ─────────────────────────────────────
-Total                   ██░░░░░░░░ ~20%
+Total                   ███░░░░░░░ ~27%
 ```
 
 ## Performance Metrics
 
 | Metric | Value |
 |--------|-------|
-| Plans Completed | 3 |
+| Plans Completed | 4 |
 | Plans Failed | 0 |
 | Avg Attempts per Plan | 1 |
-| Requirements Complete | 4/29 |
+| Requirements Complete | 7/29 |
 
 ## Accumulated Context
 
@@ -55,6 +55,9 @@ Total                   ██░░░░░░░░ ~20%
 | prepare_cached for queries | Performance optimization for repeated queries | 01-02 |
 | ConfigResult enum | Enables first-run detection and graceful error display | 01-03 |
 | r##"..."## for config template | Config template contains hex colors that conflict with r#"..."# | 01-03 |
+| DiaryViewState::new() for today | Uses chrono::Local for current date | 02-01 |
+| checked_add/sub_days for date nav | Safe date arithmetic, handles edge cases | 02-01 |
+| Right-aligned search via Layout | ui.with_layout(Layout::right_to_left) | 02-01 |
 
 ### Technical Discoveries
 
@@ -75,7 +78,11 @@ Total                   ██░░░░░░░░ ~20%
 - [x] Set up egui + eframe scaffold (01-03)
 - [x] Design database schema for diary entries (01-02)
 - [x] Plan Phase 1 in detail
-- [ ] Begin Phase 2: Core GUI
+- [x] Begin Phase 2: Core GUI (02-01)
+- [ ] Timeline view with entries (02-02)
+- [ ] Entry creation/editing (02-03)
+- [ ] Settings panel (02-04)
+- [ ] Search functionality (02-05)
 
 ### Blockers
 
@@ -87,15 +94,15 @@ Total                   ██░░░░░░░░ ~20%
 
 ## Session Continuity
 
-**Last Session:** 2026-02-08 - Completed 01-03-PLAN.md (Config & egui App)
+**Last Session:** 2026-02-08 - Completed 02-01-PLAN.md (UI Module & Header)
 
-**Stopped At:** Completed Phase 1
-**Resume File:** .planning/phases/02-core-gui/ (Phase 2 plans)
+**Stopped At:** Completed 02-01-PLAN.md
+**Resume File:** .planning/phases/02-core-gui/02-02-PLAN.md
 
 **Next Actions:**
-1. Begin Phase 2: Core GUI
-2. Create timeline view component
-3. Implement diary entry creation UI
+1. Create timeline view component (02-02)
+2. Implement diary entry creation UI (02-03)
+3. Build settings panel (02-04)
 
 **Context to Preserve:**
 - Research recommends foundation-first approach
@@ -106,6 +113,8 @@ Total                   ██░░░░░░░░ ~20%
 - CRUD operations ready: save_entry, get_entries_for_date, update_entry, delete_entry
 - Config module provides Config, ConfigResult, load_config exports
 - WdidApp struct wires db + config together, implements eframe::App
+- UI module provides DiaryViewState, render_header for header bar
+- DiaryViewState.current_date tracks selected date for timeline display
 
 ---
 *State updated: 2026-02-08*
