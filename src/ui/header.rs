@@ -2,6 +2,7 @@ use chrono::Days;
 use eframe::egui::{self, Align, Layout, Sense};
 
 use super::DiaryViewState;
+use crate::export::ExportAction;
 
 /// Actions that can be triggered from the header
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -12,13 +13,14 @@ pub enum HeaderAction {
 }
 
 /// Render the header bar with date navigation and search box.
-/// Returns an action if user interaction requires one.
+/// Returns a tuple of (HeaderAction, ExportAction) for actions triggered by user interaction.
 pub fn render_header(
     ui: &mut egui::Ui,
     state: &mut DiaryViewState,
     has_calendars: bool,
-) -> HeaderAction {
+) -> (HeaderAction, ExportAction) {
     let mut action = HeaderAction::None;
+    let mut export_action = ExportAction::None;
 
     ui.horizontal(|ui| {
         // Left arrow - go to previous day
@@ -75,9 +77,42 @@ pub fn render_header(
                     refresh_btn.on_hover_text("Refresh calendar feeds");
                 }
             }
+
+            // Export menu
+            ui.add_space(8.0);
+            ui.menu_button("📤 Export", |ui| {
+                ui.set_min_width(180.0);
+
+                if ui.button("📋 Today → Clipboard (Markdown)").clicked() {
+                    export_action = ExportAction::DayMarkdownClipboard;
+                    ui.close();
+                }
+                if ui.button("💾 Today → File (Markdown)").clicked() {
+                    export_action = ExportAction::DayMarkdownFile;
+                    ui.close();
+                }
+                ui.separator();
+                if ui.button("📋 Today → Clipboard (JSON)").clicked() {
+                    export_action = ExportAction::DayJsonClipboard;
+                    ui.close();
+                }
+                if ui.button("💾 Today → File (JSON)").clicked() {
+                    export_action = ExportAction::DayJsonFile;
+                    ui.close();
+                }
+                ui.separator();
+                if ui.button("📋 Standup Summary").clicked() {
+                    export_action = ExportAction::StandupClipboard;
+                    ui.close();
+                }
+                if ui.button("📋 Weekly Retro").clicked() {
+                    export_action = ExportAction::WeeklyRetroClipboard;
+                    ui.close();
+                }
+            });
         });
     });
 
-    action
+    (action, export_action)
 }
 
