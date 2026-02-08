@@ -3,6 +3,7 @@ mod calendar;
 mod config;
 mod db;
 mod error;
+mod export;
 mod paths;
 mod tray;
 mod ui;

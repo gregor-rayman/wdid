@@ -149,6 +149,21 @@ impl Database {
         )?;
         Ok(())
     }
+
+    /// Get entries for a date range (inclusive).
+    /// Dates in YYYY-MM-DD format. Returns entries sorted by date, then time.
+    pub fn get_entries_for_date_range(&self, start: &str, end: &str) -> Result<Vec<DiaryEntry>> {
+        let mut stmt = self.conn().prepare_cached(
+            r#"SELECT id, date, start_time, duration, content, created_at, updated_at,
+                      event_uid, event_snapshot
+               FROM diary_entries WHERE date >= ?1 AND date <= ?2
+               ORDER BY date, start_time, created_at"#,
+        )?;
+        let entries = stmt
+            .query_map(params![start, end], |row| Ok(DiaryEntry::from_row(row)))?
+            .collect::<std::result::Result<Vec<_>, _>>()?;
+        Ok(entries)
+    }
 }
 
 impl DiaryEntry {
