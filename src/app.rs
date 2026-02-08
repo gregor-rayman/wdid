@@ -10,6 +10,10 @@ use egui_commonmark::CommonMarkCache;
 use crate::calendar::{parse_ical, spawn_calendar_worker, CalendarCommand, CalendarResult};
 use crate::config::{Config, ConfigResult, WindowState};
 use crate::db::{CachedFeed, Database, DiaryEntry, NewDiaryEntry};
+use crate::export::{
+    copy_to_clipboard, format_day_markdown, format_entries_json, format_standup,
+    format_weekly_retro, save_to_file, ExportAction,
+};
 use crate::paths::AppPaths;
 use crate::tray::TrayCommand;
 use crate::ui::{snap_to_15_minutes, CalendarAction, DiaryViewState, HeaderAction};
@@ -318,6 +322,63 @@ impl WdidApp {
             }
         }
     }
+
+    /// Handle export actions triggered from the Export menu.
+    fn handle_export_action(&self, action: ExportAction) {
+        use chrono::{Datelike, Days};
+
+        match action {
+            ExportAction::None => {}
+            ExportAction::DayMarkdownClipboard => {
+                let md = format_day_markdown(&self.view_state.current_date, &self.entries);
+                if let Err(e) = copy_to_clipboard(&md) {
+                    eprintln!("Clipboard error: {}", e);
+                }
+            }
+            ExportAction::DayMarkdownFile => {
+                let md = format_day_markdown(&self.view_state.current_date, &self.entries);
+                let name = format!("{}.md", self.view_state.current_date);
+                save_to_file(&md, &name, "Markdown", "md");
+            }
+            ExportAction::DayJsonClipboard => {
+                let json = format_entries_json(&self.entries);
+                if let Err(e) = copy_to_clipboard(&json) {
+                    eprintln!("Clipboard error: {}", e);
+                }
+            }
+            ExportAction::DayJsonFile => {
+                let json = format_entries_json(&self.entries);
+                let name = format!("{}.json", self.view_state.current_date);
+                save_to_file(&json, &name, "JSON", "json");
+            }
+            ExportAction::StandupClipboard => {
+                let summary = format_standup(&self.entries);
+                if let Err(e) = copy_to_clipboard(&summary) {
+                    eprintln!("Clipboard error: {}", e);
+                }
+            }
+            ExportAction::WeeklyRetroClipboard => {
+                // Get Monday of current week
+                let weekday = self.view_state.current_date.weekday().num_days_from_monday();
+                let monday = self
+                    .view_state
+                    .current_date
+                    .checked_sub_days(Days::new(weekday as u64))
+                    .unwrap_or(self.view_state.current_date);
+                let sunday = monday.checked_add_days(Days::new(6)).unwrap_or(monday);
+
+                // Query date range
+                let start = monday.format("%Y-%m-%d").to_string();
+                let end = sunday.format("%Y-%m-%d").to_string();
+                let week_entries = self.db.get_entries_for_date_range(&start, &end).unwrap_or_default();
+
+                let retro = format_weekly_retro(&week_entries, &monday);
+                if let Err(e) = copy_to_clipboard(&retro) {
+                    eprintln!("Clipboard error: {}", e);
+                }
+            }
+        }
+    }
 }
 
 impl eframe::App for WdidApp {
@@ -449,12 +510,17 @@ impl eframe::App for WdidApp {
 
             // Header with date navigation, search, and refresh button
             let has_calendars = !self.config.calendars.is_empty();
-            let header_action =
+            let (header_action, export_action) =
                 crate::ui::header::render_header(ui, &mut self.view_state, has_calendars);
 
             // Handle header actions
             if header_action == HeaderAction::RefreshCalendars {
                 self.trigger_calendar_refresh();
+            }
+
+            // Handle export actions
+            if export_action != ExportAction::None {
+                self.handle_export_action(export_action);
             }
 
             // Handle search query changes
