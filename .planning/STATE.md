@@ -14,29 +14,29 @@
 | Dimension | Value |
 |-----------|-------|
 | Phase | 3 of 5 (03-calendar) |
-| Plan | 03 of 07 complete |
+| Plan | 04 of 07 complete |
 | Status | In progress |
-| Last Activity | 2026-02-08 - Completed 03-03-PLAN.md (async fetching) |
+| Last Activity | 2026-02-08 - Completed 03-02-PLAN.md (iCal parsing) |
 
 **Overall Progress:**
 ```
 Phase 1 [Foundation]    ██████████ 100% (3/3 plans) ✓
 Phase 2 [Core GUI]      ██████████ 100% (4/4 plans) ✓
-Phase 3 [Calendar]      ████░░░░░░ 43% (3/7 plans)
+Phase 3 [Calendar]      █████░░░░░ 57% (4/7 plans)
 Phase 4 [System]        ░░░░░░░░░░ 0%
 Phase 5 [Export]        ░░░░░░░░░░ 0%
 ─────────────────────────────────────
-Total                   ██████░░░░ ~53%
+Total                   ███████░░░ ~58%
 ```
 
 ## Performance Metrics
 
 | Metric | Value |
 |--------|-------|
-| Plans Completed | 10 |
+| Plans Completed | 11 |
 | Plans Failed | 0 |
 | Avg Attempts per Plan | 1 |
-| Requirements Complete | 16/29 |
+| Requirements Complete | 18/29 |
 
 ## Accumulated Context
 
@@ -73,6 +73,9 @@ Total                   ██████░░░░ ~53%
 | rustls-tls for reqwest | Avoids OpenSSL system dependency, better portability | 03-03 |
 | Dedicated thread for tokio runtime | Keeps async runtime isolated from UI thread | 03-03 |
 | std::sync::mpsc channels | Simple cross-thread communication for calendar results | 03-03 |
+| calcard ICalendar API | Uses VEvent component type, values Vec, PartialDateTime Options | 03-02 |
+| rrule after/before filters | Efficient date range expansion without all occurrences | 03-02 |
+| 100 occurrence safety limit | Prevents infinite expansion from unbounded RRULEs | 03-02 |
 
 ### Technical Discoveries
 
@@ -111,13 +114,13 @@ Total                   ██████░░░░ ~53%
 
 ## Session Continuity
 
-**Last Session:** 2026-02-08 - Completed 03-03 async fetching
+**Last Session:** 2026-02-08 - Completed 03-02 iCal parsing
 
-**Stopped At:** 03-03-PLAN.md complete
+**Stopped At:** 03-02-PLAN.md complete
 **Resume File:** .planning/phases/03-calendar/
 
 **Next Actions:**
-1. Execute 03-04-PLAN.md: iCal parsing integration
+1. Execute 03-04-PLAN.md: iCal parsing integration with fetcher
 2. Execute 03-05-PLAN.md: Timeline integration
 3. Continue Phase 3: Calendar Integration
 
@@ -143,6 +146,8 @@ Total                   ██████░░░░ ~53%
 - Calendar fetcher: spawn_calendar_worker(), CalendarCommand, CalendarResult
 - Async HTTP fetch with tokio+reqwest in background thread
 - Non-blocking try_recv() polling in WdidApp::update()
+- parse_ical function in src/calendar/parser.rs for iCal→CalendarEvent conversion
+- RRULE expansion with rrule crate, 100 occurrence safety limit
 
 ---
 *State updated: 2026-02-08*
