@@ -64,6 +64,23 @@ impl Database {
         Ok(())
     }
 
+    /// Update an entry with content, start time, and optional duration.
+    pub fn update_entry_full(
+        &self,
+        id: i64,
+        content: &str,
+        start_time: &str,
+        duration: Option<i32>,
+    ) -> Result<()> {
+        self.conn().execute(
+            r#"UPDATE diary_entries
+               SET content = ?1, start_time = ?2, duration = ?3, updated_at = datetime('now')
+               WHERE id = ?4"#,
+            params![content, start_time, duration, id],
+        )?;
+        Ok(())
+    }
+
     pub fn delete_entry(&self, id: i64) -> Result<()> {
         self.conn().execute("DELETE FROM diary_entries WHERE id = ?1", [id])?;
         Ok(())

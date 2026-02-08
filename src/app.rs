@@ -108,8 +108,12 @@ impl eframe::App for WdidApp {
                     return true;
                 }
                 false
-            }).then(|| self.create_entry());
+            })
+            .then(|| self.create_entry());
         }
+
+        // Track pending actions from timeline
+        let mut needs_reload = false;
 
         egui::CentralPanel::default().show(ctx, |ui| {
             // Show config warning if present
@@ -133,9 +137,46 @@ impl eframe::App for WdidApp {
                 });
             } else {
                 // Render the timeline
-                crate::ui::timeline::render_timeline(ui, &self.entries, &mut self.markdown_cache);
+                let actions = crate::ui::timeline::render_timeline(
+                    ui,
+                    &self.entries,
+                    &mut self.view_state,
+                    &mut self.markdown_cache,
+                );
+
+                // Handle save action
+                if let Some((id, content, start_time, duration)) = actions.save {
+                    // Delete entry if content is empty
+                    if content.trim().is_empty() {
+                        if let Err(e) = self.db.delete_entry(id) {
+                            eprintln!("Failed to delete empty entry: {}", e);
+                        }
+                        needs_reload = true;
+                    } else {
+                        if let Err(e) =
+                            self.db
+                                .update_entry_full(id, &content, &start_time, duration)
+                        {
+                            eprintln!("Failed to update entry: {}", e);
+                        }
+                        needs_reload = true;
+                    }
+                }
+
+                // Handle delete action
+                if let Some(id) = actions.delete {
+                    if let Err(e) = self.db.delete_entry(id) {
+                        eprintln!("Failed to delete entry: {}", e);
+                    }
+                    needs_reload = true;
+                }
             }
         });
+
+        // Reload entries if any changes were made
+        if needs_reload {
+            self.load_entries();
+        }
     }
 }
 

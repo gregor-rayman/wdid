@@ -1,15 +1,30 @@
 use egui::{ScrollArea, Ui};
 use egui_commonmark::CommonMarkCache;
 
+use super::entry::{render_entry, EntryAction};
+use super::state::DiaryViewState;
 use crate::db::DiaryEntry;
-use super::entry::render_entry_view;
+
+/// Result of timeline rendering, containing any pending actions.
+#[derive(Debug, Clone, Default)]
+pub struct TimelineActions {
+    /// Entry to save (id, content, start_time, duration)
+    pub save: Option<(i64, String, String, Option<i32>)>,
+    /// Entry to delete
+    pub delete: Option<i64>,
+}
 
 /// Render the timeline view showing all entries for the current date.
+///
+/// Returns `TimelineActions` with any pending save/delete operations.
 pub fn render_timeline(
     ui: &mut Ui,
     entries: &[DiaryEntry],
+    state: &mut DiaryViewState,
     cache: &mut CommonMarkCache,
-) {
+) -> TimelineActions {
+    let mut actions = TimelineActions::default();
+
     if entries.is_empty() {
         ui.vertical_centered(|ui| {
             ui.add_space(50.0);
@@ -17,7 +32,7 @@ pub fn render_timeline(
             ui.add_space(10.0);
             ui.label("Press Ctrl+N to create a new entry");
         });
-        return;
+        return actions;
     }
 
     ScrollArea::vertical()
@@ -35,13 +50,31 @@ pub fn render_timeline(
                 }
 
                 ui.add_space(8.0);
-                render_entry_view(ui, cache, entry);
+                let action = render_entry(ui, state, entry, cache);
+
+                // Collect any actions
+                match action {
+                    EntryAction::Save {
+                        id,
+                        content,
+                        start_time,
+                        duration,
+                    } => {
+                        actions.save = Some((id, content, start_time, duration));
+                    }
+                    EntryAction::Delete(id) => {
+                        actions.delete = Some(id);
+                    }
+                    EntryAction::None => {}
+                }
 
                 prev_time = Some(&entry.start_time);
             }
-            
+
             ui.add_space(16.0);
         });
+
+    actions
 }
 
 /// Check if there's a 30+ minute gap between two times (HH:MM format).

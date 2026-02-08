@@ -16,8 +16,14 @@ pub struct DiaryViewState {
     pub current_date: NaiveDate,
     /// ID of the entry currently being edited, if any
     pub editing_entry_id: Option<i64>,
-    /// Buffer for the entry being edited
+    /// Buffer for the entry content being edited
     pub edit_buffer: String,
+    /// Buffer for the start time being edited (HH:MM format)
+    pub start_time_buffer: String,
+    /// Buffer for the duration being edited (minutes as string)
+    pub duration_buffer: String,
+    /// Track if focus has been set for the current edit session
+    pub edit_focus_set: bool,
     /// Current search query
     pub search_query: String,
     /// Search results, if a search has been performed
@@ -37,6 +43,9 @@ impl DiaryViewState {
             current_date: Local::now().date_naive(),
             editing_entry_id: None,
             edit_buffer: String::new(),
+            start_time_buffer: String::new(),
+            duration_buffer: String::new(),
+            edit_focus_set: false,
             search_query: String::new(),
             search_results: None,
         }
