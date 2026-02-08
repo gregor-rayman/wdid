@@ -317,6 +317,16 @@ impl WdidApp {
 
 impl eframe::App for WdidApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        // Handle close-to-tray FIRST: hide window instead of quitting
+        // Must be at the very start of update() to catch close_requested before it clears
+        if ctx.input(|i| i.viewport().close_requested()) {
+            ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
+            ctx.send_viewport_cmd(egui::ViewportCommand::Visible(false));
+            crate::tray::set_visible(false);
+            // Save window state before hiding
+            self.save_window_state_if_changed(ctx);
+        }
+
         // Trigger initial calendar refresh if configured feeds exist
         if !self.calendar_refresh_triggered && !self.config.calendars.is_empty() {
             self.calendar_refresh_triggered = true;
@@ -335,15 +345,6 @@ impl eframe::App for WdidApp {
         if self.last_window_save.elapsed() >= WINDOW_SAVE_INTERVAL {
             self.save_window_state_if_changed(ctx);
             self.last_window_save = Instant::now();
-        }
-
-        // Handle close-to-tray: hide window instead of quitting
-        if ctx.input(|i| i.viewport().close_requested()) {
-            ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
-            ctx.send_viewport_cmd(egui::ViewportCommand::Visible(false));
-            crate::tray::set_visible(false);
-            // Save window state before hiding
-            self.save_window_state_if_changed(ctx);
         }
 
         // Poll for tray commands (non-blocking)
