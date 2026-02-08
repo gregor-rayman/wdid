@@ -33,7 +33,7 @@ Total                   █████████░ ~89%
 
 | Metric | Value |
 |--------|-------|
-| Plans Completed | 17 |
+| Plans Completed | 18 |
 | Plans Failed | 0 |
 | Avg Attempts per Plan | 1 |
 | Requirements Complete | 29/29 |
