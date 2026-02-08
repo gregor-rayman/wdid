@@ -12,7 +12,7 @@ wdid is built in five phases: Foundation establishes data persistence and config
 
 | Phase | Name | Status | Progress |
 |-------|------|--------|----------|
-| 1 | Foundation & Data Layer | Not Started | ░░░░░ |
+| 1 | Foundation & Data Layer | Complete | █████ |
 | 2 | Core GUI & Diary | Not Started | ░░░░░ |
 | 3 | Calendar Integration | Not Started | ░░░░░ |
 | 4 | System Integration | Not Started | ░░░░░ |
@@ -29,9 +29,9 @@ wdid is built in five phases: Foundation establishes data persistence and config
 **Plans:** 3 plans
 
 Plans:
-- [ ] 01-01-PLAN.md — Project setup, error types, XDG paths
-- [ ] 01-02-PLAN.md — SQLite database module with diary entry CRUD
-- [ ] 01-03-PLAN.md — Config module and egui app shell
+- [x] 01-01-PLAN.md — Project setup, error types, XDG paths
+- [x] 01-02-PLAN.md — SQLite database module with diary entry CRUD
+- [x] 01-03-PLAN.md — Config module and egui app shell
 
 **Requirements:**
 - DIARY-05: Diary entries persist in SQLite database

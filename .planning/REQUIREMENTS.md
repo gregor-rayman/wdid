@@ -11,7 +11,7 @@
 - [ ] **DIARY-02**: User can edit diary entry in place (raw markdown input, rendered display)
 - [ ] **DIARY-03**: User can delete diary entry via right-click context menu
 - [ ] **DIARY-04**: User can delete diary entry by clearing all text
-- [ ] **DIARY-05**: Diary entries persist in SQLite database
+- [x] **DIARY-05**: Diary entries persist in SQLite database
 - [ ] **DIARY-06**: User can link diary entry to a calendar event
 - [ ] **DIARY-07**: User can set optional duration on diary entry
 - [ ] **DIARY-08**: User can add hashtags to diary entries for categorization
@@ -35,12 +35,12 @@
 ### System Integration
 
 - [ ] **SYS-01**: App remembers window size and position between sessions
-- [ ] **SYS-02**: Data stored locally in SQLite database
+- [x] **SYS-02**: Data stored locally in SQLite database
 - [ ] **SYS-03**: System tray icon with left-click to show/hide window
 - [ ] **SYS-04**: System tray right-click opens menu with options
 - [ ] **SYS-05**: Closing window minimizes to system tray
 - [ ] **SYS-06**: Quit option available in tray menu
-- [ ] **SYS-07**: Config file at XDG location (~/.config/wdid/config.toml)
+- [x] **SYS-07**: Config file at XDG location (~/.config/wdid/config.toml)
 
 ### Export
 
@@ -89,7 +89,7 @@
 | DIARY-02 | Phase 2 | Pending |
 | DIARY-03 | Phase 2 | Pending |
 | DIARY-04 | Phase 2 | Pending |
-| DIARY-05 | Phase 1 | Pending |
+| DIARY-05 | Phase 1 | Complete |
 | DIARY-06 | Phase 3 | Pending |
 | DIARY-07 | Phase 2 | Pending |
 | DIARY-08 | Phase 2 | Pending |
@@ -104,12 +104,12 @@
 | SRCH-01 | Phase 2 | Pending |
 | SRCH-02 | Phase 2 | Pending |
 | SYS-01 | Phase 4 | Pending |
-| SYS-02 | Phase 1 | Pending |
+| SYS-02 | Phase 1 | Complete |
 | SYS-03 | Phase 4 | Pending |
 | SYS-04 | Phase 4 | Pending |
 | SYS-05 | Phase 4 | Pending |
 | SYS-06 | Phase 4 | Pending |
-| SYS-07 | Phase 1 | Pending |
+| SYS-07 | Phase 1 | Complete |
 | EXP-01 | Phase 5 | Pending |
 | EXP-02 | Phase 5 | Pending |
 | EXP-03 | Phase 5 | Pending |
