@@ -3,7 +3,7 @@ use rusqlite::{params, Row};
 use super::Database;
 use crate::error::Result;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize)]
 pub struct DiaryEntry {
     pub id: i64,
     pub date: String,           // YYYY-MM-DD format

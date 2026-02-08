@@ -1,7 +1,7 @@
 use chrono::{NaiveDate, NaiveTime};
 
 /// A calendar event (either from cache or freshly parsed)
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize)]
 pub struct CalendarEvent {
     pub id: Option<i64>,            // DB id, None if not yet saved
     pub feed_url: String,

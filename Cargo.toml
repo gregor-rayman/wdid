@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 anyhow = "1.0.101"
+arboard = { version = "3.6.1", features = ["wayland-data-control"] }
 calcard = "0.3"
 chrono = "0.4"
 chrono-tz = "0.10"
@@ -14,9 +15,11 @@ egui = "0.32.0"
 egui_commonmark = "0.21"
 image = { version = "0.25", default-features = false, features = ["png"] }
 reqwest = { version = "0.12", features = ["rustls-tls"] }
+rfd = "0.17.2"
 rrule = "0.14"
 rusqlite = { version = "0.38.0", features = ["bundled"] }
 serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
 thiserror = "2.0.18"
 tokio = { version = "1", features = ["rt-multi-thread", "sync"] }
 toml = "0.9.11"
