@@ -1,4 +1,6 @@
+use std::path::PathBuf;
 use std::sync::mpsc::{Receiver, Sender};
+use std::time::Instant;
 
 use chrono::{DateTime, Duration, Local};
 use eframe::egui;
@@ -6,13 +8,16 @@ use egui::Key;
 use egui_commonmark::CommonMarkCache;
 
 use crate::calendar::{parse_ical, spawn_calendar_worker, CalendarCommand, CalendarResult};
-use crate::config::{Config, ConfigResult};
+use crate::config::{Config, ConfigResult, WindowState};
 use crate::db::{CachedFeed, Database, DiaryEntry, NewDiaryEntry};
 use crate::paths::AppPaths;
 use crate::ui::{snap_to_15_minutes, CalendarAction, DiaryViewState, HeaderAction};
 
 /// Auto-refresh interval for calendar feeds (1 hour)
 const AUTO_REFRESH_INTERVAL: Duration = Duration::hours(1);
+
+/// Interval between window state saves (5 seconds)
+const WINDOW_SAVE_INTERVAL: std::time::Duration = std::time::Duration::from_secs(5);
 
 #[allow(dead_code)]
 pub struct WdidApp {
@@ -36,14 +41,16 @@ pub struct WdidApp {
     calendar_refresh_triggered: bool,
     /// Last time we checked for auto-refresh
     last_refresh_check: DateTime<Local>,
+    /// Path to window state file
+    window_state_file: PathBuf,
+    /// Last saved window state (for change detection)
+    last_saved_window_state: WindowState,
+    /// Last time window state was saved
+    last_window_save: Instant,
 }
 
 impl WdidApp {
-    pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
-        // Set up paths
-        let paths = AppPaths::new().expect("Could not determine app paths");
-        paths.ensure_dirs().expect("Could not create app directories");
-
+    pub fn new(_cc: &eframe::CreationContext<'_>, paths: AppPaths) -> Self {
         // Load config
         let (config, config_warning, first_run) =
             match crate::config::load_config(&paths.config_file) {
@@ -72,6 +79,9 @@ impl WdidApp {
             calendar_rx,
             calendar_refresh_triggered: false,
             last_refresh_check: Local::now(),
+            window_state_file: paths.window_state_file,
+            last_saved_window_state: WindowState::default(),
+            last_window_save: Instant::now(),
         }
     }
 

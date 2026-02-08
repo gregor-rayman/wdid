@@ -5,10 +5,11 @@ use std::path::PathBuf;
 use crate::error::{AppError, Result};
 
 pub struct AppPaths {
-    pub config_dir: PathBuf,    // ~/.config/wdid
-    pub data_dir: PathBuf,      // ~/.local/share/wdid
-    pub config_file: PathBuf,   // ~/.config/wdid/config.toml
-    pub database_file: PathBuf, // ~/.local/share/wdid/wdid.db
+    pub config_dir: PathBuf,        // ~/.config/wdid
+    pub data_dir: PathBuf,          // ~/.local/share/wdid
+    pub config_file: PathBuf,       // ~/.config/wdid/config.toml
+    pub database_file: PathBuf,     // ~/.local/share/wdid/wdid.db
+    pub window_state_file: PathBuf, // ~/.config/wdid/window_state.toml
 }
 
 impl AppPaths {
@@ -22,6 +23,7 @@ impl AppPaths {
         Ok(Self {
             config_file: config_dir.join("config.toml"),
             database_file: data_dir.join("wdid.db"),
+            window_state_file: config_dir.join("window_state.toml"),
             config_dir,
             data_dir,
         })
