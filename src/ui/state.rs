@@ -5,6 +5,13 @@ use chrono::{DateTime, Local, NaiveDate, NaiveTime, Timelike};
 use crate::calendar::CalendarEvent;
 use crate::db::DiaryEntry;
 
+/// Which column is being hovered (for scroll priority)
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum Column {
+    Calendar,
+    Diary,
+}
+
 /// Snap a time to the nearest 15-minute interval.
 pub fn snap_to_15_minutes(time: NaiveTime) -> NaiveTime {
     let minutes = time.minute();
@@ -44,6 +51,11 @@ pub struct DiaryViewState {
     pub feed_errors: HashMap<String, String>,
     /// Per-feed last refresh times (url -> timestamp)
     pub feed_last_refresh: HashMap<String, DateTime<Local>>,
+
+    /// Synchronized scroll offset for two-column layout (y-axis)
+    pub scroll_offset: f32,
+    /// Track which column is being hovered (for scroll priority)
+    pub hovered_column: Option<Column>,
 }
 
 impl Default for DiaryViewState {
@@ -70,6 +82,8 @@ impl DiaryViewState {
             calendar_refreshing: false,
             feed_errors: HashMap::new(),
             feed_last_refresh: HashMap::new(),
+            scroll_offset: 0.0,
+            hovered_column: None,
         }
     }
 
