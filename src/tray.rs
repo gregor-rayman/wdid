@@ -2,9 +2,27 @@
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{self, Receiver, Sender};
+use std::sync::OnceLock;
 
 use tray_icon::menu::{Menu, MenuEvent, MenuItem};
 use tray_icon::{Icon, TrayIcon, TrayIconBuilder, TrayIconEvent};
+
+/// Static storage for egui Context, used to request repaints from tray thread.
+static EGUI_CTX: OnceLock<egui::Context> = OnceLock::new();
+
+/// Store the egui context for repaint requests.
+/// Called from the main update() loop.
+pub fn set_egui_context(ctx: egui::Context) {
+    let _ = EGUI_CTX.set(ctx);
+}
+
+/// Request a repaint from the egui context.
+/// Called after sending tray commands to wake up the update loop.
+fn request_repaint() {
+    if let Some(ctx) = EGUI_CTX.get() {
+        ctx.request_repaint();
+    }
+}
 
 /// Commands sent from tray to the main application.
 #[derive(Debug, Clone)]
@@ -131,9 +149,11 @@ fn setup_event_handlers(tx: Sender<TrayCommand>) {
                     let _ = tx_menu.send(TrayCommand::Show);
                     VISIBLE.store(true, Ordering::SeqCst);
                 }
+                request_repaint();
             }
             "quit" => {
                 let _ = tx_menu.send(TrayCommand::Quit);
+                request_repaint();
             }
             _ => {}
         }
@@ -152,6 +172,7 @@ fn setup_event_handlers(tx: Sender<TrayCommand>) {
                     let _ = tx.send(TrayCommand::Show);
                     VISIBLE.store(true, Ordering::SeqCst);
                 }
+                request_repaint();
             }
         }
     }));

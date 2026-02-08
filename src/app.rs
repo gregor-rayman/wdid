@@ -317,6 +317,9 @@ impl WdidApp {
 
 impl eframe::App for WdidApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        // Store context for tray module to request repaints when window is hidden
+        crate::tray::set_egui_context(ctx.clone());
+
         // Handle close-to-tray FIRST: hide window instead of quitting
         // Must be at the very start of update() to catch close_requested before it clears
         if ctx.input(|i| i.viewport().close_requested()) {
