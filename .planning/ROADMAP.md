@@ -156,9 +156,9 @@ Plans:
 **Plans:** 3 plans
 
 Plans:
-- [ ] 05-01-PLAN.md — Export foundation (dependencies, Serialize derives, date range query)
-- [ ] 05-02-PLAN.md — Export formatters (Markdown, JSON, standup, weekly retro)
-- [ ] 05-03-PLAN.md — Export UI and wiring (menu, clipboard, file save)
+- [x] 05-01-PLAN.md — Export foundation (dependencies, Serialize derives, date range query)
+- [x] 05-02-PLAN.md — Export formatters (Markdown, JSON, standup, weekly retro)
+- [x] 05-03-PLAN.md — Export UI and wiring (menu, clipboard, file save)
 
 **Requirements:**
 - EXP-01: User can export entries to Markdown format

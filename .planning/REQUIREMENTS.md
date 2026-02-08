@@ -44,10 +44,10 @@
 
 ### Export
 
-- [ ] **EXP-01**: User can export entries to Markdown format
-- [ ] **EXP-02**: User can export entries to JSON format
-- [ ] **EXP-03**: User can generate standup summary (what did I do today)
-- [ ] **EXP-04**: User can generate weekly retro summary
+- [x] **EXP-01**: User can export entries to Markdown format
+- [x] **EXP-02**: User can export entries to JSON format
+- [x] **EXP-03**: User can generate standup summary (what did I do today)
+- [x] **EXP-04**: User can generate weekly retro summary
 
 ## v2 Requirements
 
@@ -110,10 +110,10 @@
 | SYS-05 | Phase 4 | Complete |
 | SYS-06 | Phase 4 | Complete |
 | SYS-07 | Phase 1 | Complete |
-| EXP-01 | Phase 5 | Pending |
-| EXP-02 | Phase 5 | Pending |
-| EXP-03 | Phase 5 | Pending |
-| EXP-04 | Phase 5 | Pending |
+| EXP-01 | Phase 5 | Complete |
+| EXP-02 | Phase 5 | Complete |
+| EXP-03 | Phase 5 | Complete |
+| EXP-04 | Phase 5 | Complete |
 
 **Coverage:**
 - v1 requirements: 29 total
