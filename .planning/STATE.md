@@ -14,29 +14,29 @@
 | Dimension | Value |
 |-----------|-------|
 | Phase | 3 of 5 (03-calendar) |
-| Plan | 04 of 07 complete |
+| Plan | 05 of 07 complete |
 | Status | In progress |
-| Last Activity | 2026-02-08 - Completed 03-04-PLAN.md (pipeline integration) |
+| Last Activity | 2026-02-08 - Completed 03-05-PLAN.md (two-column UI) |
 
 **Overall Progress:**
 ```
 Phase 1 [Foundation]    ██████████ 100% (3/3 plans) ✓
 Phase 2 [Core GUI]      ██████████ 100% (4/4 plans) ✓
-Phase 3 [Calendar]      ██████░░░░ 57% (4/7 plans)
+Phase 3 [Calendar]      ███████░░░ 71% (5/7 plans)
 Phase 4 [System]        ░░░░░░░░░░ 0%
 Phase 5 [Export]        ░░░░░░░░░░ 0%
 ─────────────────────────────────────
-Total                   ███████░░░ ~58%
+Total                   ████████░░ ~63%
 ```
 
 ## Performance Metrics
 
 | Metric | Value |
 |--------|-------|
-| Plans Completed | 11 |
+| Plans Completed | 12 |
 | Plans Failed | 0 |
 | Avg Attempts per Plan | 1 |
-| Requirements Complete | 18/29 |
+| Requirements Complete | 20/29 |
 
 ## Accumulated Context
 
@@ -79,6 +79,9 @@ Total                   ███████░░░ ~58%
 | Partition for event separation | all_day vs timed events separated via partition | 03-04 |
 | Per-feed error tracking | HashMap<url, error> allows stale data display with error | 03-04 |
 | Date-based cache invalidation | calendar_events_date triggers reload on date change | 03-04 |
+| Two-column ui.columns layout | Calendar left, diary right with synchronized scrolling | 03-05 |
+| Hover-based scroll priority | Track hovered_column to determine which scroll to sync from | 03-05 |
+| std::mem::take for borrows | Temporarily move Vec data out of state to avoid borrow conflicts | 03-05 |
 
 ### Technical Discoveries
 
@@ -103,9 +106,9 @@ Total                   ███████░░░ ~58%
 - [x] Timeline view with entries (02-02)
 - [x] Entry creation/editing (02-03)
 - [x] Search functionality (02-04)
-- [ ] Plan Phase 3: Calendar Integration
-- [ ] iCal feed parsing
-- [ ] Two-column timeline layout
+- [x] Plan Phase 3: Calendar Integration
+- [x] iCal feed parsing
+- [x] Two-column timeline layout
 
 ### Blockers
 
@@ -117,14 +120,14 @@ Total                   ███████░░░ ~58%
 
 ## Session Continuity
 
-**Last Session:** 2026-02-08 - Completed 03-04 pipeline integration
+**Last Session:** 2026-02-08 - Completed 03-05 two-column UI
 
-**Stopped At:** 03-04-PLAN.md complete
+**Stopped At:** 03-05-PLAN.md complete
 **Resume File:** .planning/phases/03-calendar/
 
 **Next Actions:**
-1. Execute 03-05-PLAN.md: Timeline integration
-2. Execute 03-06-PLAN.md: Two-column layout
+1. Execute 03-06-PLAN.md: Event interactions
+2. Execute 03-07-PLAN.md: Header enhancements
 3. Continue Phase 3: Calendar Integration
 
 **Context to Preserve:**
@@ -155,6 +158,10 @@ Total                   ███████░░░ ~58%
 - feed_errors and feed_last_refresh HashMaps track per-feed status
 - process_feed_data() handles fetch→parse→cache pipeline
 - load_calendar_events() separates all_day from timed events
+- Two-column layout with synchronized scrolling implemented
+- Column enum and scroll_offset/hovered_column fields in DiaryViewState
+- render_calendar_events() and render_all_day_events() available in calendar_column module
+- std::mem::take() pattern used to avoid borrow conflicts with calendar events
 
 ---
 *State updated: 2026-02-08*
