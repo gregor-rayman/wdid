@@ -4,6 +4,10 @@ pub mod json;
 pub mod markdown;
 pub mod summary;
 
+pub use json::format_entries_json;
+pub use markdown::format_day_markdown;
+pub use summary::{format_standup, format_weekly_retro};
+
 /// Actions that can be triggered from the export menu.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub enum ExportAction {
