@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use egui::{ScrollArea, Ui};
 use egui_commonmark::CommonMarkCache;
 
@@ -36,9 +38,16 @@ pub fn render_timeline(
 ) -> TimelineActions {
     let mut actions = TimelineActions::default();
 
+    // Build a set of current calendar event UIDs for orphan detection
+    let calendar_event_uids: HashSet<String> = calendar_events
+        .iter()
+        .chain(all_day_events.iter())
+        .map(|e| e.event_uid.clone())
+        .collect();
+
     // In search mode, use single-column layout
     if is_search_mode {
-        return render_search_results(ui, entries, state, cache);
+        return render_search_results(ui, entries, state, cache, &calendar_event_uids);
     }
 
     // Normal mode: two-column layout with calendar and diary
@@ -99,7 +108,14 @@ pub fn render_timeline(
                 .auto_shrink([false, false])
                 .vertical_scroll_offset(initial_offset)
                 .show(ui, |ui| {
-                    render_diary_entries(ui, entries, state, cache, &mut actions);
+                    render_diary_entries(
+                        ui,
+                        entries,
+                        state,
+                        cache,
+                        &mut actions,
+                        &calendar_event_uids,
+                    );
                 })
         };
 
@@ -134,6 +150,7 @@ fn render_search_results(
     entries: &[DiaryEntry],
     state: &mut DiaryViewState,
     cache: &mut CommonMarkCache,
+    calendar_event_uids: &HashSet<String>,
 ) -> TimelineActions {
     let mut actions = TimelineActions::default();
 
@@ -179,7 +196,7 @@ fn render_search_results(
                 }
 
                 ui.add_space(8.0);
-                let action = render_entry(ui, state, entry, cache);
+                let action = render_entry(ui, state, entry, cache, calendar_event_uids);
 
                 match action {
                     EntryAction::Save {
@@ -192,6 +209,9 @@ fn render_search_results(
                     }
                     EntryAction::Delete(id) => {
                         actions.delete = Some(id);
+                    }
+                    EntryAction::Unlink(id) => {
+                        actions.unlink = Some(id);
                     }
                     EntryAction::None => {}
                 }
@@ -210,6 +230,7 @@ fn render_diary_entries(
     state: &mut DiaryViewState,
     cache: &mut CommonMarkCache,
     actions: &mut TimelineActions,
+    calendar_event_uids: &HashSet<String>,
 ) {
     if entries.is_empty() {
         ui.vertical_centered(|ui| {
@@ -233,7 +254,7 @@ fn render_diary_entries(
         }
 
         ui.add_space(8.0);
-        let action = render_entry(ui, state, entry, cache);
+        let action = render_entry(ui, state, entry, cache, calendar_event_uids);
 
         match action {
             EntryAction::Save {
@@ -246,6 +267,9 @@ fn render_diary_entries(
             }
             EntryAction::Delete(id) => {
                 actions.delete = Some(id);
+            }
+            EntryAction::Unlink(id) => {
+                actions.unlink = Some(id);
             }
             EntryAction::None => {}
         }

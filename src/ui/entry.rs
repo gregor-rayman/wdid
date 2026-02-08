@@ -1,8 +1,29 @@
-use egui::{Key, Sense, Ui};
+use std::collections::HashSet;
+
+use egui::{Color32, CornerRadius, Key, Sense, Ui, Vec2};
 use egui_commonmark::{CommonMarkCache, CommonMarkViewer};
 
 use super::state::DiaryViewState;
 use crate::db::DiaryEntry;
+
+/// Default color for linked entries without a known event color.
+const DEFAULT_LINK_COLOR: Color32 = Color32::GRAY;
+
+/// Parse a hex color string (e.g., "#4A90D9") to Color32.
+fn parse_color(hex: Option<&str>) -> Color32 {
+    hex.and_then(|s| {
+        let s = s.trim_start_matches('#');
+        if s.len() == 6 {
+            let r = u8::from_str_radix(&s[0..2], 16).ok()?;
+            let g = u8::from_str_radix(&s[2..4], 16).ok()?;
+            let b = u8::from_str_radix(&s[4..6], 16).ok()?;
+            Some(Color32::from_rgb(r, g, b))
+        } else {
+            None
+        }
+    })
+    .unwrap_or(DEFAULT_LINK_COLOR)
+}
 
 /// Actions that can result from entry interaction.
 #[derive(Debug, Clone, PartialEq)]
@@ -18,23 +39,27 @@ pub enum EntryAction {
     },
     /// Delete entry by ID
     Delete(i64),
+    /// Unlink entry from its associated event
+    Unlink(i64),
 }
 
 /// Render a single diary entry with edit/view mode support.
 ///
+/// `calendar_event_uids` is used to detect orphaned links (entry linked to event that no longer exists).
 /// Returns an `EntryAction` indicating what action should be taken.
 pub fn render_entry(
     ui: &mut Ui,
     state: &mut DiaryViewState,
     entry: &DiaryEntry,
     cache: &mut CommonMarkCache,
+    calendar_event_uids: &HashSet<String>,
 ) -> EntryAction {
     let is_editing = state.editing_entry_id == Some(entry.id);
 
     if is_editing {
         render_edit_mode(ui, state, entry)
     } else {
-        render_view_mode(ui, state, entry, cache)
+        render_view_mode(ui, state, entry, cache, calendar_event_uids)
     }
 }
 
@@ -120,43 +145,101 @@ fn render_view_mode(
     state: &mut DiaryViewState,
     entry: &DiaryEntry,
     cache: &mut CommonMarkCache,
+    calendar_event_uids: &HashSet<String>,
 ) -> EntryAction {
     let mut action = EntryAction::None;
 
-    // Wrap entire entry in a clickable frame
+    // Check if this entry is linked to an event
+    let is_linked = entry.event_uid.is_some();
+    let is_orphaned = is_linked
+        && entry
+            .event_uid
+            .as_ref()
+            .map(|uid| !calendar_event_uids.contains(uid))
+            .unwrap_or(false);
+
+    // Determine link color from event snapshot (format: "color:summary")
+    // or use default gray for orphaned links
+    let link_color = if is_linked {
+        entry
+            .event_snapshot
+            .as_ref()
+            .and_then(|s| s.split(':').next())
+            .map(|c| parse_color(Some(c)))
+            .unwrap_or(DEFAULT_LINK_COLOR)
+    } else {
+        DEFAULT_LINK_COLOR
+    };
+
+    // Wrap entire entry in a frame with optional colored left border
     let frame_response = egui::Frame::new()
-        .inner_margin(4.0)
+        .fill(ui.visuals().widgets.noninteractive.bg_fill)
+        .corner_radius(CornerRadius::same(4))
+        .inner_margin(Vec2::new(0.0, 0.0))
         .show(ui, |ui| {
-            // Time badge
             ui.horizontal(|ui| {
-                let time_text = if let Some(duration) = entry.duration {
-                    if let Ok(start) =
-                        chrono::NaiveTime::parse_from_str(&entry.start_time, "%H:%M")
-                    {
-                        let end = start + chrono::Duration::minutes(duration as i64);
-                        format!("⏱ {} - {}", entry.start_time, end.format("%H:%M"))
-                    } else {
-                        format!("⏱ {} ({} min)", entry.start_time, duration)
+                // Colored left border for linked entries
+                if is_linked {
+                    let (rect, _) =
+                        ui.allocate_exact_size(Vec2::new(4.0, 60.0), egui::Sense::hover());
+                    ui.painter().rect_filled(
+                        rect,
+                        CornerRadius {
+                            nw: 4,
+                            sw: 4,
+                            ne: 0,
+                            se: 0,
+                        },
+                        link_color,
+                    );
+                }
+
+                ui.vertical(|ui| {
+                    ui.add_space(4.0);
+
+                    // Orphan warning if applicable
+                    if is_orphaned {
+                        ui.label(
+                            egui::RichText::new("⚠ Event no longer exists")
+                                .small()
+                                .color(Color32::YELLOW),
+                        );
                     }
-                } else {
-                    format!("⏱ {}", entry.start_time)
-                };
 
-                ui.label(
-                    egui::RichText::new(time_text)
-                        .strong()
-                        .color(egui::Color32::from_rgb(100, 149, 237)),
-                );
+                    // Time badge
+                    ui.horizontal(|ui| {
+                        let time_text = if let Some(duration) = entry.duration {
+                            if let Ok(start) =
+                                chrono::NaiveTime::parse_from_str(&entry.start_time, "%H:%M")
+                            {
+                                let end = start + chrono::Duration::minutes(duration as i64);
+                                format!("⏱ {} - {}", entry.start_time, end.format("%H:%M"))
+                            } else {
+                                format!("⏱ {} ({} min)", entry.start_time, duration)
+                            }
+                        } else {
+                            format!("⏱ {}", entry.start_time)
+                        };
+
+                        ui.label(
+                            egui::RichText::new(time_text)
+                                .strong()
+                                .color(Color32::from_rgb(100, 149, 237)),
+                        );
+                    });
+
+                    // Render content as markdown
+                    if !entry.content.is_empty() {
+                        ui.add_space(4.0);
+                        CommonMarkViewer::new().show(ui, cache, &entry.content);
+                    } else {
+                        ui.add_space(4.0);
+                        ui.label(egui::RichText::new("(empty entry)").weak().italics());
+                    }
+
+                    ui.add_space(4.0);
+                });
             });
-
-            // Render content as markdown
-            if !entry.content.is_empty() {
-                ui.add_space(4.0);
-                CommonMarkViewer::new().show(ui, cache, &entry.content);
-            } else {
-                ui.add_space(4.0);
-                ui.label(egui::RichText::new("(empty entry)").weak().italics());
-            }
         });
 
     // Make the frame clickable
@@ -171,8 +254,15 @@ fn render_view_mode(
         state.edit_focus_set = false;
     }
 
-    // Context menu for delete
+    // Context menu for delete and unlink
     response.context_menu(|ui| {
+        if is_linked {
+            if ui.button("🔗 Unlink from event").clicked() {
+                action = EntryAction::Unlink(entry.id);
+                ui.close();
+            }
+            ui.separator();
+        }
         if ui.button("🗑 Delete").clicked() {
             action = EntryAction::Delete(entry.id);
             ui.close();

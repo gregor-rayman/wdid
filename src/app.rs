@@ -9,7 +9,7 @@ use crate::calendar::{parse_ical, spawn_calendar_worker, CalendarCommand, Calend
 use crate::config::{Config, ConfigResult};
 use crate::db::{CachedFeed, Database, DiaryEntry, NewDiaryEntry};
 use crate::paths::AppPaths;
-use crate::ui::{snap_to_15_minutes, DiaryViewState, HeaderAction};
+use crate::ui::{snap_to_15_minutes, CalendarAction, DiaryViewState, HeaderAction};
 
 /// Auto-refresh interval for calendar feeds (1 hour)
 const AUTO_REFRESH_INTERVAL: Duration = Duration::hours(1);
@@ -418,6 +418,49 @@ impl eframe::App for WdidApp {
                         eprintln!("Failed to delete entry: {}", e);
                     }
                     needs_reload = true;
+                }
+
+                // Handle unlink action
+                if let Some(id) = actions.unlink {
+                    if let Err(e) = self.db.unlink_entry(id) {
+                        eprintln!("Failed to unlink entry: {}", e);
+                    }
+                    needs_reload = true;
+                }
+
+                // Handle calendar action (add note to event)
+                if let CalendarAction::AddNote {
+                    event_uid,
+                    summary,
+                    start_time,
+                    feed_color,
+                } = actions.calendar_action
+                {
+                    // Build event snapshot: "color:summary" format
+                    let snapshot = format!(
+                        "{}:{}",
+                        feed_color.as_deref().unwrap_or("#808080"),
+                        summary
+                    );
+
+                    let date_str = self.view_state.current_date.format("%Y-%m-%d").to_string();
+                    let new_entry = NewDiaryEntry {
+                        date: date_str,
+                        start_time,
+                        duration: None,
+                        content: String::new(),
+                        event_uid: Some(event_uid),
+                        event_snapshot: Some(snapshot),
+                    };
+
+                    match self.db.save_entry(&new_entry) {
+                        Ok(_id) => {
+                            needs_reload = true;
+                        }
+                        Err(e) => {
+                            eprintln!("Failed to create linked entry: {}", e);
+                        }
+                    }
                 }
             }
         });
