@@ -7,36 +7,36 @@
 
 **Core Value:** See your day at a glance and capture what you did — calendar events and personal notes unified in a single timeline.
 
-**Current Focus:** Phase 2: Core GUI - Entry Editing complete
+**Current Focus:** Phase 2: Core GUI - Search Functionality complete
 
 ## Current Position
 
 | Dimension | Value |
 |-----------|-------|
 | Phase | 2 of 5 (02-core-gui) |
-| Plan | 03 of 05 complete |
+| Plan | 04 of 05 complete |
 | Status | In progress |
-| Last Activity | 2026-02-08 - Completed 02-03-PLAN.md |
+| Last Activity | 2026-02-08 - Completed 02-04-PLAN.md |
 
 **Overall Progress:**
 ```
 Phase 1 [Foundation]    ██████████ 100% (3/3 plans) ✓
-Phase 2 [Core GUI]      ██████░░░░ 60% (3/5 plans)
+Phase 2 [Core GUI]      ████████░░ 80% (4/5 plans)
 Phase 3 [Calendar]      ░░░░░░░░░░ 0%
 Phase 4 [System]        ░░░░░░░░░░ 0%
 Phase 5 [Export]        ░░░░░░░░░░ 0%
 ─────────────────────────────────────
-Total                   █████░░░░░ ~40%
+Total                   █████░░░░░ ~47%
 ```
 
 ## Performance Metrics
 
 | Metric | Value |
 |--------|-------|
-| Plans Completed | 6 |
+| Plans Completed | 7 |
 | Plans Failed | 0 |
 | Avg Attempts per Plan | 1 |
-| Requirements Complete | 13/29 |
+| Requirements Complete | 15/29 |
 
 ## Accumulated Context
 
@@ -64,6 +64,9 @@ Total                   █████░░░░░ ~40%
 | EntryAction enum pattern | Clean separation between UI rendering and state mutation | 02-03 |
 | Escape/lost_focus save triggers | Common inline editing pattern, matches user expectations | 02-03 |
 | Delete-on-empty content | Natural way to remove entries without explicit delete | 02-03 |
+| Hashtag prefix detection | '#' prefix switches to hashtag-specific search | 02-04 |
+| LIKE query for search | Simple substring matching, case-insensitive | 02-04 |
+| Search change detection | prev_search_query comparison avoids re-querying | 02-04 |
 
 ### Technical Discoveries
 
@@ -87,8 +90,8 @@ Total                   █████░░░░░ ~40%
 - [x] Begin Phase 2: Core GUI (02-01)
 - [x] Timeline view with entries (02-02)
 - [x] Entry creation/editing (02-03)
-- [ ] Settings panel (02-04)
-- [ ] Search functionality (02-05)
+- [x] Search functionality (02-04)
+- [ ] Settings panel (02-05)
 
 ### Blockers
 
@@ -100,15 +103,14 @@ Total                   █████░░░░░ ~40%
 
 ## Session Continuity
 
-**Last Session:** 2026-02-08 - Completed 02-03-PLAN.md (Entry Editing)
+**Last Session:** 2026-02-08 - Completed 02-04-PLAN.md (Search Functionality)
 
-**Stopped At:** Completed 02-03-PLAN.md
-**Resume File:** .planning/phases/02-core-gui/02-04-PLAN.md
+**Stopped At:** Completed 02-04-PLAN.md
+**Resume File:** .planning/phases/02-core-gui/02-05-PLAN.md
 
 **Next Actions:**
-1. Build settings panel (02-04)
-2. Implement search functionality (02-05)
-3. Begin Phase 3: Calendar Integration
+1. Build settings panel (02-05)
+2. Begin Phase 3: Calendar Integration
 
 **Context to Preserve:**
 - Research recommends foundation-first approach
@@ -124,6 +126,8 @@ Total                   █████░░░░░ ~40%
 - Click-to-edit with Escape/lost_focus save triggers
 - Context menu delete and delete-on-empty content implemented
 - Duration editing with calculated end time display
+- Search: search_by_hashtag and search_by_text in database layer
+- Search UI: prev_search_query tracking, is_search_mode timeline parameter
 
 ---
 *State updated: 2026-02-08*
