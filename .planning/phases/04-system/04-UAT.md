@@ -1,7 +1,7 @@
 # Phase 4: System Integration — User Acceptance Testing
 
 **Started:** 2026-02-08
-**Status:** Complete - All tests passing
+**Status:** Round 3 verification - 2 issues still failing
 
 ## Test Results
 
@@ -10,9 +10,9 @@
 | 1 | Window size persists after restart | ✅ | Fixed: ctx.screen_rect() fallback for Wayland |
 | 2 | Window position persists (X11 only) | N/A | Wayland - position controlled by compositor |
 | 3 | System tray icon appears | ✅ | |
-| 4 | Left-click tray toggles window | ✅ | Fixed: request_repaint() wakes update loop |
+| 4 | Left-click tray toggles window | ❌ | Show/Hide menu item still does nothing |
 | 5 | Right-click tray shows menu | ✅ | |
-| 6 | X button hides to tray (not quit) | ✅ | Fixed: early return after close_requested |
+| 6 | X button hides to tray (not quit) | ❌ | Window still doesn't hide |
 | 7 | Quit from tray menu exits app | ✅ | |
 
 ## Test Details
@@ -89,23 +89,25 @@
 **Root Cause:** `close_requested()` check isn't intercepting close event in time; may need viewport config
 **Fix Location:** `src/app.rs` and possibly `src/main.rs` viewport configuration
 
-## Summary (Final - Round 3)
+## Summary (Round 3 Verification)
 
-- **Passed:** 6/7
-- **Failed:** 0/7
+- **Passed:** 4/7
+- **Failed:** 2/7
 - **N/A:** 1/7 (Wayland position - by design)
 
-### Issues Resolved in 04-04
+### Still Failing After 04-04
 
-| # | Issue | Fix |
-|---|-------|-----|
-| 4 | Show/Hide menu item does nothing | Added request_repaint() after TrayCommand send |
-| 6 | X button doesn't hide to tray | Added early return after close_requested handler |
+| # | Issue | Status |
+|---|-------|--------|
+| 4 | Show/Hide menu item does nothing | Still failing |
+| 6 | X button doesn't hide to tray | Still failing |
 
-### Root Cause Analysis
+### Previous Fix Attempt (04-04)
 
-Both issues stemmed from egui not running its update() loop when the window was hidden:
-- **Issue 4:** TrayCommand was sent but never processed because update() didn't run
-- **Issue 6:** Viewport commands were sent but update() continued, possibly interfering
+The 04-04 plan added:
+- `EGUI_CTX` static OnceLock in tray.rs
+- `set_egui_context()` function
+- `request_repaint()` calls after TrayCommand sends
+- Early `return` after close_requested handler
 
-**Solution:** Store egui Context in static OnceLock, call request_repaint() from tray thread after sending commands to wake the update loop. Add early return after close-to-tray to ensure viewport commands complete cleanly.
+**These fixes did not resolve the issues.** Further investigation needed.
