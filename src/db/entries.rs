@@ -119,6 +119,36 @@ impl Database {
             .collect::<std::result::Result<Vec<_>, _>>()?;
         Ok(entries)
     }
+
+    /// Link a diary entry to a calendar event.
+    /// Stores the event UID and a snapshot of the event summary for display
+    /// even if the original event is later deleted.
+    pub fn link_entry_to_event(
+        &self,
+        entry_id: i64,
+        event_uid: &str,
+        event_snapshot: &str,
+    ) -> Result<()> {
+        self.conn().execute(
+            r#"UPDATE diary_entries
+               SET event_uid = ?1, event_snapshot = ?2, updated_at = datetime('now')
+               WHERE id = ?3"#,
+            params![event_uid, event_snapshot, entry_id],
+        )?;
+        Ok(())
+    }
+
+    /// Unlink a diary entry from its associated calendar event.
+    /// Preserves the entry content but removes the event association.
+    pub fn unlink_entry(&self, entry_id: i64) -> Result<()> {
+        self.conn().execute(
+            r#"UPDATE diary_entries
+               SET event_uid = NULL, event_snapshot = NULL, updated_at = datetime('now')
+               WHERE id = ?1"#,
+            [entry_id],
+        )?;
+        Ok(())
+    }
 }
 
 impl DiaryEntry {
