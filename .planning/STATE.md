@@ -16,13 +16,13 @@
 | Phase | 3 of 5 (03-calendar) |
 | Plan | 04 of 07 complete |
 | Status | In progress |
-| Last Activity | 2026-02-08 - Completed 03-02-PLAN.md (iCal parsing) |
+| Last Activity | 2026-02-08 - Completed 03-04-PLAN.md (pipeline integration) |
 
 **Overall Progress:**
 ```
 Phase 1 [Foundation]    ██████████ 100% (3/3 plans) ✓
 Phase 2 [Core GUI]      ██████████ 100% (4/4 plans) ✓
-Phase 3 [Calendar]      █████░░░░░ 57% (4/7 plans)
+Phase 3 [Calendar]      ██████░░░░ 57% (4/7 plans)
 Phase 4 [System]        ░░░░░░░░░░ 0%
 Phase 5 [Export]        ░░░░░░░░░░ 0%
 ─────────────────────────────────────
@@ -76,6 +76,9 @@ Total                   ███████░░░ ~58%
 | calcard ICalendar API | Uses VEvent component type, values Vec, PartialDateTime Options | 03-02 |
 | rrule after/before filters | Efficient date range expansion without all occurrences | 03-02 |
 | 100 occurrence safety limit | Prevents infinite expansion from unbounded RRULEs | 03-02 |
+| Partition for event separation | all_day vs timed events separated via partition | 03-04 |
+| Per-feed error tracking | HashMap<url, error> allows stale data display with error | 03-04 |
+| Date-based cache invalidation | calendar_events_date triggers reload on date change | 03-04 |
 
 ### Technical Discoveries
 
@@ -114,14 +117,14 @@ Total                   ███████░░░ ~58%
 
 ## Session Continuity
 
-**Last Session:** 2026-02-08 - Completed 03-02 iCal parsing
+**Last Session:** 2026-02-08 - Completed 03-04 pipeline integration
 
-**Stopped At:** 03-02-PLAN.md complete
+**Stopped At:** 03-04-PLAN.md complete
 **Resume File:** .planning/phases/03-calendar/
 
 **Next Actions:**
-1. Execute 03-04-PLAN.md: iCal parsing integration with fetcher
-2. Execute 03-05-PLAN.md: Timeline integration
+1. Execute 03-05-PLAN.md: Timeline integration
+2. Execute 03-06-PLAN.md: Two-column layout
 3. Continue Phase 3: Calendar Integration
 
 **Context to Preserve:**
@@ -148,6 +151,10 @@ Total                   ███████░░░ ~58%
 - Non-blocking try_recv() polling in WdidApp::update()
 - parse_ical function in src/calendar/parser.rs for iCal→CalendarEvent conversion
 - RRULE expansion with rrule crate, 100 occurrence safety limit
+- DiaryViewState now includes calendar_events, all_day_events, calendar_refreshing
+- feed_errors and feed_last_refresh HashMaps track per-feed status
+- process_feed_data() handles fetch→parse→cache pipeline
+- load_calendar_events() separates all_day from timed events
 
 ---
 *State updated: 2026-02-08*
