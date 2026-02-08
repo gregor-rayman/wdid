@@ -27,6 +27,31 @@ impl Database {
                 event_snapshot TEXT
             );
             CREATE INDEX IF NOT EXISTS idx_entries_date ON diary_entries(date);
+
+            CREATE TABLE IF NOT EXISTS calendar_events (
+                id INTEGER PRIMARY KEY,
+                feed_url TEXT NOT NULL,
+                event_uid TEXT NOT NULL,
+                summary TEXT NOT NULL DEFAULT '',
+                dtstart_date TEXT NOT NULL,
+                dtstart_time TEXT,
+                dtend_date TEXT,
+                dtend_time TEXT,
+                all_day INTEGER DEFAULT 0,
+                rrule TEXT,
+                cached_at TEXT NOT NULL DEFAULT (datetime('now')),
+                UNIQUE(feed_url, event_uid, dtstart_date)
+            );
+            CREATE INDEX IF NOT EXISTS idx_events_date ON calendar_events(dtstart_date);
+            CREATE INDEX IF NOT EXISTS idx_events_feed ON calendar_events(feed_url);
+
+            CREATE TABLE IF NOT EXISTS calendar_feeds (
+                url TEXT PRIMARY KEY,
+                name TEXT,
+                color TEXT,
+                last_refresh TEXT,
+                last_error TEXT
+            );
         "#,
         )?;
 
