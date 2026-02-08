@@ -68,27 +68,31 @@ fn render_edit_mode(ui: &mut Ui, state: &mut DiaryViewState, entry: &DiaryEntry)
     let mut action = EntryAction::None;
 
     // Time and duration inputs in a horizontal row
+    // Track responses to detect focus on any field
+    let mut time_response = None;
+    let mut duration_response = None;
+
     ui.horizontal(|ui| {
         ui.label("Time:");
-        ui.add(
+        time_response = Some(ui.add(
             egui::TextEdit::singleline(&mut state.start_time_buffer)
                 .desired_width(50.0)
                 .hint_text("HH:MM"),
-        );
+        ));
 
         ui.add_space(16.0);
         ui.label("Duration (min):");
-        ui.add(
+        duration_response = Some(ui.add(
             egui::TextEdit::singleline(&mut state.duration_buffer)
                 .desired_width(40.0)
                 .hint_text("—"),
-        );
+        ));
     });
 
     ui.add_space(4.0);
 
     // Content TextEdit - multiline
-    let response = ui.add(
+    let content_response = ui.add(
         egui::TextEdit::multiline(&mut state.edit_buffer)
             .desired_width(f32::INFINITY)
             .min_size(egui::vec2(200.0, 80.0))
@@ -97,15 +101,20 @@ fn render_edit_mode(ui: &mut Ui, state: &mut DiaryViewState, entry: &DiaryEntry)
 
     // Request focus on first frame of editing
     if !state.edit_focus_set {
-        response.request_focus();
+        content_response.request_focus();
         state.edit_focus_set = true;
     }
 
-    // Check for save triggers: Escape key or lost focus (click outside)
-    let escape_pressed = ui.input(|i| i.key_pressed(Key::Escape));
-    let lost_focus = response.lost_focus() && !ui.input(|i| i.key_pressed(Key::Escape));
+    // Check if any of the edit fields have focus
+    let any_field_has_focus = content_response.has_focus()
+        || time_response.as_ref().map_or(false, |r| r.has_focus())
+        || duration_response.as_ref().map_or(false, |r| r.has_focus());
 
-    if escape_pressed || lost_focus {
+    // Check for save triggers: Escape key or click outside all fields
+    let escape_pressed = ui.input(|i| i.key_pressed(Key::Escape));
+    let clicked_outside = ui.input(|i| i.pointer.any_click()) && !any_field_has_focus;
+
+    if escape_pressed || clicked_outside {
         // Parse duration
         let duration: Option<i32> = state
             .duration_buffer
