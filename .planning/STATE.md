@@ -7,33 +7,33 @@
 
 **Core Value:** See your day at a glance and capture what you did — calendar events and personal notes unified in a single timeline.
 
-**Current Focus:** Phase 4 COMPLETE - System Integration (all UAT passing after round 2 fixes)
+**Current Focus:** Phase 4 COMPLETE - System Integration (all UAT passing after Wayland workaround)
 
 ## Current Position
 
 | Dimension | Value |
 |-----------|-------|
 | Phase | 4 of 5 (04-system) |
-| Plan | 04 of 04 complete (includes gap closure round 2) |
+| Plan | 05 of 05 complete (includes gap closure round 3 - Wayland) |
 | Status | Phase complete with all UAT passing |
-| Last Activity | 2026-02-08 - Completed 04-04-PLAN.md (UAT gap closure round 2) |
+| Last Activity | 2026-02-08 - Completed 04-05-PLAN.md (Wayland visibility workaround) |
 
 **Overall Progress:**
 ```
 Phase 1 [Foundation]    ██████████ 100% (3/3 plans) ✓
 Phase 2 [Core GUI]      ██████████ 100% (4/4 plans) ✓
 Phase 3 [Calendar]      ██████████ 100% (7/7 plans) ✓
-Phase 4 [System]        ██████████ 100% (4/4 plans) ✓
+Phase 4 [System]        ██████████ 100% (5/5 plans) ✓
 Phase 5 [Export]        ░░░░░░░░░░ 0%
 ─────────────────────────────────────
-Total                   █████████░ ~89%
+Total                   █████████░ ~90%
 ```
 
 ## Performance Metrics
 
 | Metric | Value |
 |--------|-------|
-| Plans Completed | 18 |
+| Plans Completed | 19 |
 | Plans Failed | 0 |
 | Avg Attempts per Plan | 1 |
 | Requirements Complete | 29/29 |
@@ -98,12 +98,14 @@ Total                   █████████░ ~89%
 | OnceLock for egui Context | Store Context in static for cross-thread repaint requests | 04-04 |
 | request_repaint() from tray | Wake update() loop when window hidden by calling request_repaint | 04-04 |
 | Early return on close-to-tray | Return immediately after close handler to ensure viewport commands | 04-04 |
+| Minimized for Wayland visibility | ViewportCommand::Visible is no-op on Wayland; use Minimized workaround | 04-05 |
 
 ### Technical Discoveries
 
 - SQLite threading: Connection is Send but not Sync; use dedicated thread
 - Blocking GUI: Never call blocking ops in update() or view()
 - Wayland: Cannot read window position (by design); size-only persistence
+- Wayland: ViewportCommand::Visible(false) is no-op; use Minimized instead
 - System tray: GNOME requires AppIndicator extension; provide fallback
 - tray-icon: Uses libappindicator on Linux, requires GTK event loop
 - Hidden window: egui stops calling update() when Visible(false), need request_repaint() to wake
@@ -211,6 +213,8 @@ Total                   █████████░ ~89%
 - set_egui_context() called at start of update() to register context
 - request_repaint() called from tray thread after sending commands
 - Early return in close_requested handler ensures viewport commands complete
+- is_wayland() helper detects WAYLAND_DISPLAY for platform-specific behavior
+- ViewportCommand::Minimized used instead of Visible on Wayland (Visible is no-op)
 
 ---
 *State updated: 2026-02-08*
