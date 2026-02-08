@@ -14,29 +14,29 @@
 | Dimension | Value |
 |-----------|-------|
 | Phase | 3 of 5 (03-calendar) |
-| Plan | 01 of 03 complete |
+| Plan | 03 of 07 complete |
 | Status | In progress |
-| Last Activity | 2026-02-08 - Completed 03-01-PLAN.md |
+| Last Activity | 2026-02-08 - Completed 03-03-PLAN.md (async fetching) |
 
 **Overall Progress:**
 ```
 Phase 1 [Foundation]    ██████████ 100% (3/3 plans) ✓
 Phase 2 [Core GUI]      ██████████ 100% (4/4 plans) ✓
-Phase 3 [Calendar]      ███░░░░░░░ 33% (1/3 plans)
+Phase 3 [Calendar]      ████░░░░░░ 43% (3/7 plans)
 Phase 4 [System]        ░░░░░░░░░░ 0%
 Phase 5 [Export]        ░░░░░░░░░░ 0%
 ─────────────────────────────────────
-Total                   █████░░░░░ ~47%
+Total                   ██████░░░░ ~53%
 ```
 
 ## Performance Metrics
 
 | Metric | Value |
 |--------|-------|
-| Plans Completed | 8 |
+| Plans Completed | 10 |
 | Plans Failed | 0 |
 | Avg Attempts per Plan | 1 |
-| Requirements Complete | 14/29 |
+| Requirements Complete | 16/29 |
 
 ## Accumulated Context
 
@@ -70,6 +70,9 @@ Total                   █████░░░░░ ~47%
 | CalendarEvent with NaiveDate/NaiveTime | Separate date/time fields for all-day handling | 03-01 |
 | UNIQUE(feed_url, event_uid, dtstart_date) | Allows same event on different dates for recurring expansion | 03-01 |
 | LEFT JOIN calendar_feeds | Attach feed metadata without requiring feed entry first | 03-01 |
+| rustls-tls for reqwest | Avoids OpenSSL system dependency, better portability | 03-03 |
+| Dedicated thread for tokio runtime | Keeps async runtime isolated from UI thread | 03-03 |
+| std::sync::mpsc channels | Simple cross-thread communication for calendar results | 03-03 |
 
 ### Technical Discoveries
 
@@ -108,15 +111,15 @@ Total                   █████░░░░░ ~47%
 
 ## Session Continuity
 
-**Last Session:** 2026-02-08 - Completed Phase 2: Core GUI & Diary
+**Last Session:** 2026-02-08 - Completed 03-03 async fetching
 
-**Stopped At:** Phase 2 complete, verified
+**Stopped At:** 03-03-PLAN.md complete
 **Resume File:** .planning/phases/03-calendar/
 
 **Next Actions:**
-1. Execute 03-02-PLAN.md: iCal feed parsing
-2. Execute 03-03-PLAN.md: Two-column timeline layout
-3. Complete Phase 3: Calendar Integration
+1. Execute 03-04-PLAN.md: iCal parsing integration
+2. Execute 03-05-PLAN.md: Timeline integration
+3. Continue Phase 3: Calendar Integration
 
 **Context to Preserve:**
 - Research recommends foundation-first approach
@@ -137,6 +140,9 @@ Total                   █████░░░░░ ~47%
 - Search UI: prev_search_query tracking, is_search_mode timeline parameter
 - CalendarEvent struct in src/calendar/types.rs with all fields for display/caching
 - calendar_events and calendar_feeds tables ready for caching
+- Calendar fetcher: spawn_calendar_worker(), CalendarCommand, CalendarResult
+- Async HTTP fetch with tokio+reqwest in background thread
+- Non-blocking try_recv() polling in WdidApp::update()
 
 ---
 *State updated: 2026-02-08*
