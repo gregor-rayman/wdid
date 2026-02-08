@@ -7,23 +7,23 @@
 
 **Core Value:** See your day at a glance and capture what you did — calendar events and personal notes unified in a single timeline.
 
-**Current Focus:** Phase 4 COMPLETE - System Integration (UAT fixes applied)
+**Current Focus:** Phase 4 COMPLETE - System Integration (all UAT passing after round 2 fixes)
 
 ## Current Position
 
 | Dimension | Value |
 |-----------|-------|
 | Phase | 4 of 5 (04-system) |
-| Plan | 03 of 03 complete (includes gap closure) |
+| Plan | 04 of 04 complete (includes gap closure round 2) |
 | Status | Phase complete with all UAT passing |
-| Last Activity | 2026-02-08 - Completed 04-03-PLAN.md (UAT gap closure) |
+| Last Activity | 2026-02-08 - Completed 04-04-PLAN.md (UAT gap closure round 2) |
 
 **Overall Progress:**
 ```
 Phase 1 [Foundation]    ██████████ 100% (3/3 plans) ✓
 Phase 2 [Core GUI]      ██████████ 100% (4/4 plans) ✓
 Phase 3 [Calendar]      ██████████ 100% (7/7 plans) ✓
-Phase 4 [System]        ██████████ 100% (3/3 plans) ✓
+Phase 4 [System]        ██████████ 100% (4/4 plans) ✓
 Phase 5 [Export]        ░░░░░░░░░░ 0%
 ─────────────────────────────────────
 Total                   █████████░ ~89%
@@ -95,6 +95,9 @@ Total                   █████████░ ~89%
 | screen_rect fallback for Wayland | ctx.screen_rect() when inner_rect is None for window dimensions | 04-03 |
 | Show/Hide toggle menu item | AppIndicator intercepts all clicks; toggle via menu item workaround | 04-03 |
 | Close check first in update | close_requested() must be checked before anything else clears it | 04-03 |
+| OnceLock for egui Context | Store Context in static for cross-thread repaint requests | 04-04 |
+| request_repaint() from tray | Wake update() loop when window hidden by calling request_repaint | 04-04 |
+| Early return on close-to-tray | Return immediately after close handler to ensure viewport commands | 04-04 |
 
 ### Technical Discoveries
 
@@ -103,6 +106,7 @@ Total                   █████████░ ~89%
 - Wayland: Cannot read window position (by design); size-only persistence
 - System tray: GNOME requires AppIndicator extension; provide fallback
 - tray-icon: Uses libappindicator on Linux, requires GTK event loop
+- Hidden window: egui stops calling update() when Visible(false), need request_repaint() to wake
 
 ### Session Notes
 
@@ -141,9 +145,9 @@ Total                   █████████░ ~89%
 
 ## Session Continuity
 
-**Last Session:** 2026-02-08 - Completed 04-03 UAT gap closure
+**Last Session:** 2026-02-08 - Completed 04-04 UAT gap closure round 2
 
-**Stopped At:** 04-03-PLAN.md complete (Phase 4 COMPLETE with all UAT passing)
+**Stopped At:** 04-04-PLAN.md complete (Phase 4 COMPLETE with all 7 UAT tests passing)
 **Resume File:** None - Phase 4 complete
 
 **Next Actions:**
@@ -202,7 +206,11 @@ Total                   █████████░ ~89%
 - set_visible() function to update visibility from main thread
 - Close-to-tray: X button hides instead of quitting
 - Left-click tray toggles visibility, right-click shows menu
-- Tray menu: "Show" and "Quit" items
+- Tray menu: "Show/Hide" toggle and "Quit" items
+- EGUI_CTX static OnceLock for cross-thread Context sharing
+- set_egui_context() called at start of update() to register context
+- request_repaint() called from tray thread after sending commands
+- Early return in close_requested handler ensures viewport commands complete
 
 ---
 *State updated: 2026-02-08*

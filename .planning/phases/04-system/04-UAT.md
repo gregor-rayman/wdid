@@ -1,7 +1,7 @@
 # Phase 4: System Integration — User Acceptance Testing
 
 **Started:** 2026-02-08
-**Status:** Re-verification in progress
+**Status:** Complete - All tests passing
 
 ## Test Results
 
@@ -10,9 +10,9 @@
 | 1 | Window size persists after restart | ✅ | Fixed: ctx.screen_rect() fallback for Wayland |
 | 2 | Window position persists (X11 only) | N/A | Wayland - position controlled by compositor |
 | 3 | System tray icon appears | ✅ | |
-| 4 | Left-click tray toggles window | ❌ | Menu appears but Show/Hide does nothing |
+| 4 | Left-click tray toggles window | ✅ | Fixed: request_repaint() wakes update loop |
 | 5 | Right-click tray shows menu | ✅ | |
-| 6 | X button hides to tray (not quit) | ❌ | Window doesn't hide |
+| 6 | X button hides to tray (not quit) | ✅ | Fixed: early return after close_requested |
 | 7 | Quit from tray menu exits app | ✅ | |
 
 ## Test Details
@@ -89,28 +89,23 @@
 **Root Cause:** `close_requested()` check isn't intercepting close event in time; may need viewport config
 **Fix Location:** `src/app.rs` and possibly `src/main.rs` viewport configuration
 
-## Summary (Re-verification Round 2)
+## Summary (Final - Round 3)
 
-- **Passed:** 4/7
-- **Failed:** 2/7
-- **N/A:** 1/7 (Wayland)
+- **Passed:** 6/7
+- **Failed:** 0/7
+- **N/A:** 1/7 (Wayland position - by design)
 
-### Remaining Issues After 04-03 Fixes
+### Issues Resolved in 04-04
 
-| # | Issue | Status |
-|---|-------|--------|
-| 4 | Show/Hide menu item does nothing | Still failing |
-| 6 | X button doesn't hide to tray | Still failing |
+| # | Issue | Fix |
+|---|-------|-----|
+| 4 | Show/Hide menu item does nothing | Added request_repaint() after TrayCommand send |
+| 6 | X button doesn't hide to tray | Added early return after close_requested handler |
 
-### Issue 5: Show/Hide menu item does nothing
-**Test:** 4
-**Severity:** High
-**Description:** Menu appears on tray click, but Show/Hide item doesn't toggle window visibility
-**Root Cause:** TrayCommand not being received by app, or visibility commands not working
+### Root Cause Analysis
 
-### Issue 6: X button still doesn't hide to tray
-**Test:** 6
-**Severity:** High
-**Description:** Clicking X doesn't hide window - close_requested() not being caught in time
-**Root Cause:** eframe may clear close_requested flag before update() runs; need on_close callback
+Both issues stemmed from egui not running its update() loop when the window was hidden:
+- **Issue 4:** TrayCommand was sent but never processed because update() didn't run
+- **Issue 6:** Viewport commands were sent but update() continued, possibly interfering
 
+**Solution:** Store egui Context in static OnceLock, call request_repaint() from tray thread after sending commands to wake the update loop. Add early return after close-to-tray to ensure viewport commands complete cleanly.
