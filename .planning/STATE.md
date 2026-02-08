@@ -7,16 +7,16 @@
 
 **Core Value:** See your day at a glance and capture what you did — calendar events and personal notes unified in a single timeline.
 
-**Current Focus:** Phase 4 COMPLETE - System Integration (all UAT passing after Wayland workaround)
+**Current Focus:** Phase 5 - Export (foundation complete)
 
 ## Current Position
 
 | Dimension | Value |
 |-----------|-------|
-| Phase | 4 of 5 (04-system) |
-| Plan | 05 of 05 complete (includes gap closure round 3 - Wayland) |
-| Status | Phase complete with all UAT passing |
-| Last Activity | 2026-02-08 - Completed 04-05-PLAN.md (Wayland visibility workaround) |
+| Phase | 5 of 5 (05-export) |
+| Plan | 01 of 04 complete |
+| Status | In progress |
+| Last Activity | 2026-02-08 - Completed 05-01-PLAN.md (export foundation) |
 
 **Overall Progress:**
 ```
@@ -24,16 +24,16 @@ Phase 1 [Foundation]    ██████████ 100% (3/3 plans) ✓
 Phase 2 [Core GUI]      ██████████ 100% (4/4 plans) ✓
 Phase 3 [Calendar]      ██████████ 100% (7/7 plans) ✓
 Phase 4 [System]        ██████████ 100% (5/5 plans) ✓
-Phase 5 [Export]        ░░░░░░░░░░ 0%
+Phase 5 [Export]        ██░░░░░░░░ 25% (1/4 plans)
 ─────────────────────────────────────
-Total                   █████████░ ~90%
+Total                   █████████░ ~95%
 ```
 
 ## Performance Metrics
 
 | Metric | Value |
 |--------|-------|
-| Plans Completed | 19 |
+| Plans Completed | 20 |
 | Plans Failed | 0 |
 | Avg Attempts per Plan | 1 |
 | Requirements Complete | 29/29 |
@@ -215,6 +215,10 @@ Total                   █████████░ ~90%
 - Early return in close_requested handler ensures viewport commands complete
 - is_wayland() helper detects WAYLAND_DISPLAY for platform-specific behavior
 - ViewportCommand::Minimized used instead of Visible on Wayland (Visible is no-op)
+- Export module: src/export/mod.rs with ExportAction enum
+- serde_json, arboard (wayland-data-control), rfd dependencies for export
+- DiaryEntry and CalendarEvent have Serialize derive
+- Database::get_entries_for_date_range(start, end) for multi-day queries
 
 ---
 *State updated: 2026-02-08*
