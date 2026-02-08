@@ -1,7 +1,7 @@
 use egui::{ScrollArea, Ui};
 use egui_commonmark::CommonMarkCache;
 
-use super::calendar_column::{render_all_day_events, render_calendar_events};
+use super::calendar_column::{render_all_day_events, render_calendar_events, CalendarAction};
 use super::entry::{render_entry, EntryAction};
 use super::state::{Column, DiaryViewState};
 use crate::calendar::CalendarEvent;
@@ -14,6 +14,10 @@ pub struct TimelineActions {
     pub save: Option<(i64, String, String, Option<i32>)>,
     /// Entry to delete
     pub delete: Option<i64>,
+    /// Entry to unlink from event
+    pub unlink: Option<i64>,
+    /// Calendar action (add note to event)
+    pub calendar_action: CalendarAction,
 }
 
 /// Render the timeline view showing entries.
@@ -73,7 +77,10 @@ pub fn render_timeline(
                 .auto_shrink([false, false])
                 .vertical_scroll_offset(initial_offset)
                 .show(ui, |ui| {
-                    render_calendar_events(ui, calendar_events);
+                    let cal_action = render_calendar_events(ui, calendar_events);
+                    if !matches!(cal_action, CalendarAction::None) {
+                        actions.calendar_action = cal_action;
+                    }
                 })
         };
 

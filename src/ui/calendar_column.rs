@@ -7,6 +7,20 @@ use crate::calendar::CalendarEvent;
 /// Default color for events without a configured feed color.
 const DEFAULT_EVENT_COLOR: Color32 = Color32::GRAY;
 
+/// Actions that can result from calendar event interaction.
+#[derive(Debug, Clone, Default)]
+pub enum CalendarAction {
+    #[default]
+    None,
+    /// User wants to add a note linked to this event.
+    AddNote {
+        event_uid: String,
+        summary: String,
+        start_time: String,
+        feed_color: Option<String>,
+    },
+}
+
 /// Parse a hex color string (e.g., "#4A90D9") to Color32.
 fn parse_color(hex: Option<&str>) -> Color32 {
     hex.and_then(|s| {
@@ -56,23 +70,33 @@ fn render_all_day_chip(ui: &mut Ui, event: &CalendarEvent, color: Color32) {
 /// Render timed calendar events as vertical cards.
 ///
 /// Each event shows time range and summary with a color-coded left border.
-pub fn render_calendar_events(ui: &mut Ui, events: &[CalendarEvent]) {
+/// Returns a `CalendarAction` if user interaction requires one.
+pub fn render_calendar_events(ui: &mut Ui, events: &[CalendarEvent]) -> CalendarAction {
+    let mut action = CalendarAction::None;
+
     if events.is_empty() {
         ui.vertical_centered(|ui| {
             ui.add_space(20.0);
             ui.label(RichText::new("No calendar events").weak());
         });
-        return;
+        return action;
     }
 
     for event in events {
-        render_event_card(ui, event);
+        let event_action = render_event_card(ui, event);
+        if !matches!(event_action, CalendarAction::None) {
+            action = event_action;
+        }
         ui.add_space(4.0);
     }
+
+    action
 }
 
 /// Render a single calendar event card with color-coded left border.
-fn render_event_card(ui: &mut Ui, event: &CalendarEvent) {
+/// Returns a `CalendarAction` if user clicks the 'add note' button.
+fn render_event_card(ui: &mut Ui, event: &CalendarEvent) -> CalendarAction {
+    let mut action = CalendarAction::None;
     let color = parse_color(event.feed_color.as_deref());
     let time_display = event.time_display();
 
@@ -100,16 +124,30 @@ fn render_event_card(ui: &mut Ui, event: &CalendarEvent) {
                 // Event content
                 ui.vertical(|ui| {
                     ui.add_space(4.0);
-                    // Time display
-                    if !time_display.is_empty() {
-                        ui.label(RichText::new(&time_display).small().strong());
-                    }
+                    // Time display and add note button
+                    ui.horizontal(|ui| {
+                        if !time_display.is_empty() {
+                            ui.label(RichText::new(&time_display).small().strong());
+                        }
+                        // Add note button
+                        let add_btn = ui.small_button("📝").on_hover_text("Add note for this event");
+                        if add_btn.clicked() {
+                            action = CalendarAction::AddNote {
+                                event_uid: event.event_uid.clone(),
+                                summary: event.summary.clone(),
+                                start_time: time_display.clone(),
+                                feed_color: event.feed_color.clone(),
+                            };
+                        }
+                    });
                     // Summary
                     ui.label(&event.summary);
                     ui.add_space(4.0);
                 });
             });
         });
+
+    action
 }
 
 #[cfg(test)]
