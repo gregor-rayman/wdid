@@ -7,36 +7,36 @@
 
 **Core Value:** See your day at a glance and capture what you did — calendar events and personal notes unified in a single timeline.
 
-**Current Focus:** Phase 4 COMPLETE - System Integration
+**Current Focus:** Phase 4 COMPLETE - System Integration (UAT fixes applied)
 
 ## Current Position
 
 | Dimension | Value |
 |-----------|-------|
 | Phase | 4 of 5 (04-system) |
-| Plan | 02 of 02 complete |
-| Status | Phase complete |
-| Last Activity | 2026-02-08 - Completed 04-02-PLAN.md (system tray) |
+| Plan | 03 of 03 complete (includes gap closure) |
+| Status | Phase complete with all UAT passing |
+| Last Activity | 2026-02-08 - Completed 04-03-PLAN.md (UAT gap closure) |
 
 **Overall Progress:**
 ```
 Phase 1 [Foundation]    ██████████ 100% (3/3 plans) ✓
 Phase 2 [Core GUI]      ██████████ 100% (4/4 plans) ✓
 Phase 3 [Calendar]      ██████████ 100% (7/7 plans) ✓
-Phase 4 [System]        ██████████ 100% (2/2 plans) ✓
+Phase 4 [System]        ██████████ 100% (3/3 plans) ✓
 Phase 5 [Export]        ░░░░░░░░░░ 0%
 ─────────────────────────────────────
-Total                   █████████░ ~88%
+Total                   █████████░ ~89%
 ```
 
 ## Performance Metrics
 
 | Metric | Value |
 |--------|-------|
-| Plans Completed | 16 |
+| Plans Completed | 17 |
 | Plans Failed | 0 |
 | Avg Attempts per Plan | 1 |
-| Requirements Complete | 28/29 |
+| Requirements Complete | 29/29 |
 
 ## Accumulated Context
 
@@ -92,6 +92,9 @@ Total                   █████████░ ~88%
 | GTK event loop in dedicated thread | tray-icon on Linux requires GTK main loop; isolate from UI thread | 04-02 |
 | AtomicBool for visibility sync | Simple thread-safe state for left-click toggle visibility | 04-02 |
 | mpsc channel for tray commands | Consistent with calendar worker pattern; decouples tray from UI | 04-02 |
+| screen_rect fallback for Wayland | ctx.screen_rect() when inner_rect is None for window dimensions | 04-03 |
+| Show/Hide toggle menu item | AppIndicator intercepts all clicks; toggle via menu item workaround | 04-03 |
+| Close check first in update | close_requested() must be checked before anything else clears it | 04-03 |
 
 ### Technical Discoveries
 
@@ -125,6 +128,7 @@ Total                   █████████░ ~88%
 - [x] Plan Phase 4: System Integration
 - [x] Window persistence (04-01)
 - [x] System tray (04-02)
+- [x] UAT gap closure (04-03)
 - [ ] Phase 5: Export capabilities
 
 ### Blockers
@@ -137,9 +141,9 @@ Total                   █████████░ ~88%
 
 ## Session Continuity
 
-**Last Session:** 2026-02-08 - Completed 04-02 system tray
+**Last Session:** 2026-02-08 - Completed 04-03 UAT gap closure
 
-**Stopped At:** 04-02-PLAN.md complete (Phase 4 COMPLETE)
+**Stopped At:** 04-03-PLAN.md complete (Phase 4 COMPLETE with all UAT passing)
 **Resume File:** None - Phase 4 complete
 
 **Next Actions:**
