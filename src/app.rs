@@ -14,6 +14,11 @@ use crate::paths::AppPaths;
 use crate::tray::TrayCommand;
 use crate::ui::{snap_to_15_minutes, CalendarAction, DiaryViewState, HeaderAction};
 
+/// Check if running on Wayland (WAYLAND_DISPLAY env var set)
+fn is_wayland() -> bool {
+    std::env::var("WAYLAND_DISPLAY").is_ok()
+}
+
 /// Auto-refresh interval for calendar feeds (1 hour)
 const AUTO_REFRESH_INTERVAL: Duration = Duration::hours(1);
 
@@ -324,7 +329,12 @@ impl eframe::App for WdidApp {
         // Must be at the very start of update() to catch close_requested before it clears
         if ctx.input(|i| i.viewport().close_requested()) {
             ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
-            ctx.send_viewport_cmd(egui::ViewportCommand::Visible(false));
+            // On Wayland, Visible(false) is a no-op, use Minimized instead
+            if is_wayland() {
+                ctx.send_viewport_cmd(egui::ViewportCommand::Minimized(true));
+            } else {
+                ctx.send_viewport_cmd(egui::ViewportCommand::Visible(false));
+            }
             crate::tray::set_visible(false);
             // Save window state before hiding
             self.save_window_state_if_changed(ctx);
@@ -356,12 +366,22 @@ impl eframe::App for WdidApp {
         while let Ok(cmd) = self.tray_rx.try_recv() {
             match cmd {
                 TrayCommand::Show => {
-                    ctx.send_viewport_cmd(egui::ViewportCommand::Visible(true));
+                    // On Wayland, Visible(true) is a no-op, use Minimized(false) instead
+                    if is_wayland() {
+                        ctx.send_viewport_cmd(egui::ViewportCommand::Minimized(false));
+                    } else {
+                        ctx.send_viewport_cmd(egui::ViewportCommand::Visible(true));
+                    }
                     ctx.send_viewport_cmd(egui::ViewportCommand::Focus);
                     crate::tray::set_visible(true);
                 }
                 TrayCommand::Hide => {
-                    ctx.send_viewport_cmd(egui::ViewportCommand::Visible(false));
+                    // On Wayland, Visible(false) is a no-op, use Minimized(true) instead
+                    if is_wayland() {
+                        ctx.send_viewport_cmd(egui::ViewportCommand::Minimized(true));
+                    } else {
+                        ctx.send_viewport_cmd(egui::ViewportCommand::Visible(false));
+                    }
                     crate::tray::set_visible(false);
                 }
                 TrayCommand::Quit => {
