@@ -328,6 +328,8 @@ impl eframe::App for WdidApp {
             crate::tray::set_visible(false);
             // Save window state before hiding
             self.save_window_state_if_changed(ctx);
+            // Don't process rest of update when hiding to ensure viewport commands complete
+            return;
         }
 
         // Trigger initial calendar refresh if configured feeds exist
