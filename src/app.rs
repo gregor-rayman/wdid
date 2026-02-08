@@ -1,7 +1,10 @@
+use std::sync::mpsc::{Receiver, Sender};
+
 use eframe::egui;
 use egui::Key;
 use egui_commonmark::CommonMarkCache;
 
+use crate::calendar::{spawn_calendar_worker, CalendarCommand, CalendarResult};
 use crate::config::{Config, ConfigResult};
 use crate::db::{Database, DiaryEntry, NewDiaryEntry};
 use crate::paths::AppPaths;
@@ -19,6 +22,12 @@ pub struct WdidApp {
     entries: Vec<DiaryEntry>,
     /// Track which date entries were loaded for
     entries_date: Option<chrono::NaiveDate>,
+    /// Channel to send commands to the calendar worker
+    calendar_tx: Sender<CalendarCommand>,
+    /// Channel to receive results from the calendar worker
+    calendar_rx: Receiver<CalendarResult>,
+    /// Whether initial calendar refresh has been triggered
+    calendar_refresh_triggered: bool,
 }
 
 impl WdidApp {
@@ -38,6 +47,9 @@ impl WdidApp {
         // Open database
         let db = Database::open(&paths.database_file).expect("Could not open database");
 
+        // Spawn calendar worker
+        let (calendar_tx, calendar_rx) = spawn_calendar_worker();
+
         Self {
             db,
             config,
@@ -47,6 +59,9 @@ impl WdidApp {
             markdown_cache: CommonMarkCache::default(),
             entries: Vec::new(),
             entries_date: None,
+            calendar_tx,
+            calendar_rx,
+            calendar_refresh_triggered: false,
         }
     }
 
@@ -95,6 +110,43 @@ impl WdidApp {
 
 impl eframe::App for WdidApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        // Trigger initial calendar refresh if configured feeds exist
+        if !self.calendar_refresh_triggered && !self.config.calendars.is_empty() {
+            self.calendar_refresh_triggered = true;
+            let _ = self
+                .calendar_tx
+                .send(CalendarCommand::RefreshAll(self.config.calendars.clone()));
+        }
+
+        // Poll for calendar results (non-blocking)
+        while let Ok(result) = self.calendar_rx.try_recv() {
+            match result {
+                CalendarResult::FeedData {
+                    feed_url,
+                    data,
+                    feed_name,
+                    feed_color,
+                } => {
+                    // TODO: parse and cache (Plan 04)
+                    eprintln!(
+                        "Received {} bytes from {} (name: {:?}, color: {:?})",
+                        data.len(),
+                        feed_url,
+                        feed_name,
+                        feed_color
+                    );
+                }
+                CalendarResult::FeedError { feed_url, error } => {
+                    eprintln!("Feed error {}: {}", feed_url, error);
+                }
+                CalendarResult::RefreshComplete => {
+                    eprintln!("Calendar refresh complete");
+                    // TODO: update UI state (Plan 04)
+                }
+            }
+            ctx.request_repaint();
+        }
+
         // Reload entries if date changed
         if self.entries_date != Some(self.view_state.current_date) {
             self.load_entries();
