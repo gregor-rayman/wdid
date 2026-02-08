@@ -7,27 +7,21 @@
 
 **Core Value:** See your day at a glance and capture what you did — calendar events and personal notes unified in a single timeline.
 
-**Current Focus:** MILESTONE COMPLETE - All 5 phases delivered ✓
+**Current Focus:** v1.0 SHIPPED — Ready for next milestone
 
 ## Current Position
 
 | Dimension | Value |
 |-----------|-------|
-| Phase | 5 of 5 (05-export) |
-| Plan | 03 of 03 complete |
-| Status | Phase complete, milestone complete |
-| Last Activity | 2026-02-08 - Completed 05-03-PLAN.md (export UI and wiring) |
+| Milestone | v1.0 complete |
+| Status | Shipped and tagged |
+| Last Activity | 2026-02-08 - Milestone v1.0 archived |
 
-**Overall Progress:**
-```
-Phase 1 [Foundation]    ██████████ 100% (3/3 plans) ✓
-Phase 2 [Core GUI]      ██████████ 100% (4/4 plans) ✓
-Phase 3 [Calendar]      ██████████ 100% (7/7 plans) ✓
-Phase 4 [System]        ██████████ 100% (5/5 plans) ✓
-Phase 5 [Export]        ██████████ 100% (3/3 plans) ✓
-─────────────────────────────────────
-Total                   ██████████ 100%
-```
+## Shipped Milestones
+
+| Version | Date | Phases | Plans | Requirements |
+|---------|------|--------|-------|--------------|
+| v1.0 | 2026-02-08 | 5 | 22 | 29/29 |
 
 ## Performance Metrics
 
@@ -36,7 +30,7 @@ Total                   ██████████ 100%
 | Plans Completed | 22 |
 | Plans Failed | 0 |
 | Avg Attempts per Plan | 1 |
-| Requirements Complete | 33/33 |
+| Requirements Complete | 29/29 |
 
 ## Accumulated Context
 

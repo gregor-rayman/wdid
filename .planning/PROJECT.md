@@ -8,33 +8,45 @@ A native Linux desktop application for tracking daily work. It displays imported
 
 See your day at a glance and capture what you did — calendar events and personal notes unified in a single timeline that makes it easy to track and recall your work.
 
-## Requirements
+## Current State
 
-### Validated
+**Version:** v1.0 (shipped 2026-02-08)
 
-(None yet — ship to validate)
+### What's Working
 
-### Active
+- ✓ Two-column timeline: calendar events (left), diary entries (right)
+- ✓ iCal feed import with RRULE expansion (up to 5 feeds)
+- ✓ Create/edit/delete diary entries with markdown rendering
+- ✓ Link diary entries to calendar events
+- ✓ Hashtag and full-text search across all dates
+- ✓ Day navigation with arrow buttons
+- ✓ Manual and hourly automatic calendar refresh
+- ✓ SQLite database with WAL mode
+- ✓ TOML config at ~/.config/wdid/config.toml
+- ✓ System tray with show/hide toggle
+- ✓ Close-to-tray behavior
+- ✓ Window size/position persistence
+- ✓ Export to Markdown/JSON
+- ✓ Standup and weekly retro summaries
 
-- [ ] Display single-day timeline view with calendar events (left) and diary entries (right)
-- [ ] Import and display events from iCal feeds (read-only, up to 3-5 feeds)
-- [ ] Create standalone diary entries with start time and optional duration
-- [ ] Create diary entries linked to specific calendar events
-- [ ] Edit diary entries in place (raw markdown input, rendered display)
-- [ ] Support basic markdown formatting in diary entries
-- [ ] Support hashtags in entries for categorization
-- [ ] Search entries by hashtag across all dates
-- [ ] Navigate between days with arrow buttons
-- [ ] Manual and automatic (hourly) calendar refresh
-- [ ] Store diary entries in SQLite database
-- [ ] Configure calendar feeds via TOML config file (~/.config/wdid/config.toml)
-- [ ] System tray icon with left-click show/hide, right-click menu
-- [ ] Close window minimizes to tray, quit via tray menu
-- [ ] Remember window size and position between sessions
-- [ ] Delete entries via right-click context menu or by clearing text
-- [ ] Small "add note" button on calendar events to create linked entries
+### Tech Stack
 
-### Out of Scope
+| Component | Choice |
+|-----------|--------|
+| Language | Rust |
+| GUI | egui/eframe |
+| Database | SQLite (rusqlite) |
+| Calendar | ical + rrule crates |
+| HTTP | reqwest + tokio |
+| System Tray | ksni |
+| Clipboard | arboard |
+| File Dialogs | rfd |
+
+## Next Milestone Goals
+
+(To be defined with `/gsd:new-milestone`)
+
+## Out of Scope
 
 - Write-back to external calendars — iCal feeds are read-only by design
 - Formal billing/invoicing features — time tracking is for personal reference only
@@ -50,25 +62,6 @@ See your day at a glance and capture what you did — calendar events and person
 - The name "wdid" stands for "What Did I Do" — the question you answer when reviewing your day
 - Hashtags enable finding related entries (e.g., #project-x, #meeting, #billing)
 
-## Constraints
-
-- **Language**: Rust — non-negotiable, core requirement
-- **Platform**: Linux primary — Windows/macOS are nice-to-have, not blocking
-- **UI Framework**: To be decided — egui, iced, tauri, or slint are candidates
-- **Storage**: SQLite — chosen for reliability and queryability
-- **Config**: TOML at XDG location — follows Linux conventions
-
-## Key Decisions
-
-| Decision | Rationale | Outcome |
-|----------|-----------|---------|
-| Two-column timeline layout | Events and notes side-by-side, sorted by time | — Pending |
-| SQLite for storage | Single file, queryable, reliable | — Pending |
-| TOML config at ~/.config/wdid/ | XDG standard, human-readable | — Pending |
-| Markdown for diary entries | Simple, portable, no complex editor needed | — Pending |
-| Read-only calendar sync | Simpler implementation, iCal feeds are inherently read-only | — Pending |
-| UI framework | To be researched — egui, iced, tauri, slint | — Pending |
-
 ---
-*Last updated: 2026-02-08 after initialization*
+*Last updated: 2026-02-08 after v1.0 milestone completion*
 
