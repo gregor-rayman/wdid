@@ -1,18 +1,18 @@
 # Phase 4: System Integration — User Acceptance Testing
 
 **Started:** 2026-02-08
-**Status:** Complete (all fixed in 04-03)
+**Status:** Re-verification in progress
 
 ## Test Results
 
 | # | Test | Status | Notes |
 |---|------|--------|-------|
 | 1 | Window size persists after restart | ✅ | Fixed: ctx.screen_rect() fallback for Wayland |
-| 2 | Window position persists (X11 only) | ✅ | Fixed with Task 1 |
+| 2 | Window position persists (X11 only) | N/A | Wayland - position controlled by compositor |
 | 3 | System tray icon appears | ✅ | |
-| 4 | Left-click tray toggles window | ✅* | *Via menu item (AppIndicator limitation) |
+| 4 | Left-click tray toggles window | ❌ | Menu appears but Show/Hide does nothing |
 | 5 | Right-click tray shows menu | ✅ | |
-| 6 | X button hides to tray (not quit) | ✅ | Fixed: close check moved to start of update() |
+| 6 | X button hides to tray (not quit) | ❌ | Window doesn't hide |
 | 7 | Quit from tray menu exits app | ✅ | |
 
 ## Test Details
@@ -89,11 +89,28 @@
 **Root Cause:** `close_requested()` check isn't intercepting close event in time; may need viewport config
 **Fix Location:** `src/app.rs` and possibly `src/main.rs` viewport configuration
 
-## Summary
+## Summary (Re-verification Round 2)
 
-- **Passed:** 7/7
-- **Failed:** 0/7
-- **Pending:** 0/7
+- **Passed:** 4/7
+- **Failed:** 2/7
+- **N/A:** 1/7 (Wayland)
 
-**All issues resolved in 04-03-PLAN.md (gap closure).**
+### Remaining Issues After 04-03 Fixes
+
+| # | Issue | Status |
+|---|-------|--------|
+| 4 | Show/Hide menu item does nothing | Still failing |
+| 6 | X button doesn't hide to tray | Still failing |
+
+### Issue 5: Show/Hide menu item does nothing
+**Test:** 4
+**Severity:** High
+**Description:** Menu appears on tray click, but Show/Hide item doesn't toggle window visibility
+**Root Cause:** TrayCommand not being received by app, or visibility commands not working
+
+### Issue 6: X button still doesn't hide to tray
+**Test:** 6
+**Severity:** High
+**Description:** Clicking X doesn't hide window - close_requested() not being caught in time
+**Root Cause:** eframe may clear close_requested flag before update() runs; need on_close callback
 
