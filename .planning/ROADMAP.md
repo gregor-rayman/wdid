@@ -116,7 +116,7 @@ Plans:
 
 ---
 
-## Phase 4: System Integration (UAT FIXES IN PROGRESS)
+## Phase 4: System Integration ✓ COMPLETE
 
 **Goal:** App behaves as a well-integrated desktop application with tray, persistence, and expected behaviors.
 
@@ -127,7 +127,7 @@ Plans:
 Plans:
 - [x] 04-01-PLAN.md — Window size and position persistence
 - [x] 04-02-PLAN.md — System tray with show/hide, menu, close-to-tray
-- [ ] 04-03-PLAN.md — UAT gap closure: fix Wayland state saving, tray click behavior, close-to-tray
+- [x] 04-03-PLAN.md — UAT gap closure: fix Wayland state saving, tray click behavior, close-to-tray
 
 **Requirements:**
 - SYS-01: App remembers window size and position between sessions
