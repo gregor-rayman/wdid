@@ -1,5 +1,6 @@
 //! Calendar column rendering for the two-column timeline layout.
 
+use chrono::Timelike;
 use egui::{Color32, CornerRadius, Frame, RichText, Stroke, Ui, Vec2};
 
 use crate::calendar::{CalendarEvent, EventStatus};
@@ -17,6 +18,7 @@ pub enum CalendarAction {
         event_uid: String,
         summary: String,
         start_time: String,
+        duration: Option<i32>,
         feed_color: Option<String>,
     },
 }
@@ -170,10 +172,23 @@ fn render_event_card(ui: &mut Ui, event: &CalendarEvent) -> CalendarAction {
                         // Add note button
                         let add_btn = ui.small_button("📝").on_hover_text("Add note for this event");
                         if add_btn.clicked() {
+                            // Calculate duration in minutes if we have both start and end times
+                            let duration = match (event.dtstart_time, event.dtend_time) {
+                                (Some(start), Some(end)) => {
+                                    let start_mins = start.hour() as i32 * 60 + start.minute() as i32;
+                                    let end_mins = end.hour() as i32 * 60 + end.minute() as i32;
+                                    let dur = end_mins - start_mins;
+                                    if dur > 0 { Some(dur) } else { None }
+                                }
+                                _ => None,
+                            };
                             action = CalendarAction::AddNote {
                                 event_uid: event.event_uid.clone(),
                                 summary: event.summary.clone(),
-                                start_time: time_display.clone(),
+                                start_time: event.dtstart_time
+                                    .map(|t| t.format("%H:%M").to_string())
+                                    .unwrap_or_else(|| "09:00".to_string()),
+                                duration,
                                 feed_color: event.feed_color.clone(),
                             };
                         }

@@ -635,6 +635,7 @@ impl eframe::App for WdidApp {
                     event_uid,
                     summary,
                     start_time,
+                    duration,
                     feed_color,
                 } = actions.calendar_action
                 {
@@ -649,7 +650,7 @@ impl eframe::App for WdidApp {
                     let new_entry = NewDiaryEntry {
                         date: date_str,
                         start_time,
-                        duration: None,
+                        duration,
                         content: String::new(),
                         event_uid: Some(event_uid),
                         event_snapshot: Some(snapshot),
