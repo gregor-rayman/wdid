@@ -4,7 +4,8 @@ use anyhow::{anyhow, Result};
 use calcard::icalendar::{
     ICalendar, ICalendarComponent, ICalendarComponentType, ICalendarProperty, ICalendarValue,
 };
-use chrono::{Datelike, NaiveDate, NaiveTime, TimeZone};
+use chrono::{DateTime, Datelike, FixedOffset, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone};
+use chrono_tz::Tz as IanaTz;
 use rrule::{RRuleSet, Tz};
 
 use super::types::CalendarEvent;
@@ -118,20 +119,34 @@ fn get_text_property(component: &ICalendarComponent, prop: &ICalendarProperty) -
 }
 
 /// Parse DTSTART from component, returns (date, time, is_all_day)
+/// Time is converted to local timezone if timezone info is available.
 fn parse_dtstart(component: &ICalendarComponent) -> Option<(NaiveDate, Option<NaiveTime>, bool)> {
     let entry = component.property(&ICalendarProperty::Dtstart)?;
-    entry.values.first().and_then(parse_datetime_value)
+    let tzid = entry.tz_id();
+    entry
+        .values
+        .first()
+        .and_then(|v| parse_datetime_value_with_tz(v, tzid))
 }
 
 /// Parse DTEND from component
+/// Time is converted to local timezone if timezone info is available.
 fn parse_dtend(component: &ICalendarComponent) -> Option<(Option<NaiveDate>, Option<NaiveTime>)> {
     let entry = component.property(&ICalendarProperty::Dtend)?;
-    let (date, time, _) = entry.values.first().and_then(parse_datetime_value)?;
+    let tzid = entry.tz_id();
+    let (date, time, _) = entry
+        .values
+        .first()
+        .and_then(|v| parse_datetime_value_with_tz(v, tzid))?;
     Some((Some(date), time))
 }
 
 /// Parse a datetime value into (date, time, is_all_day)
-fn parse_datetime_value(value: &ICalendarValue) -> Option<(NaiveDate, Option<NaiveTime>, bool)> {
+/// If timezone info is available, converts to local timezone.
+fn parse_datetime_value_with_tz(
+    value: &ICalendarValue,
+    tzid: Option<&str>,
+) -> Option<(NaiveDate, Option<NaiveTime>, bool)> {
     if let ICalendarValue::PartialDateTime(pdt) = value {
         // PartialDateTime has optional year, month, day fields
         let year = pdt.year?;
@@ -140,21 +155,77 @@ fn parse_datetime_value(value: &ICalendarValue) -> Option<(NaiveDate, Option<Nai
         let date = NaiveDate::from_ymd_opt(year as i32, month as u32, day as u32)?;
 
         // Check if time is present (hour/minute/second)
-        let (time, all_day) = if pdt.hour.is_some() {
-            let t = NaiveTime::from_hms_opt(
+        if pdt.hour.is_some() {
+            let naive_time = NaiveTime::from_hms_opt(
                 pdt.hour.unwrap_or(0) as u32,
                 pdt.minute.unwrap_or(0) as u32,
                 pdt.second.unwrap_or(0) as u32,
             )?;
-            (Some(t), false)
-        } else {
-            (None, true)
-        };
+            let naive_dt = NaiveDateTime::new(date, naive_time);
 
-        Some((date, time, all_day))
+            // Convert to local timezone
+            let local_dt = convert_to_local(naive_dt, pdt.tz_hour, pdt.tz_minute, pdt.tz_minus, tzid);
+            Some((local_dt.date_naive(), Some(local_dt.time()), false))
+        } else {
+            // All-day event - no timezone conversion needed
+            Some((date, None, true))
+        }
     } else {
         None
     }
+}
+
+/// Convert a naive datetime to local timezone given timezone info.
+///
+/// Priority:
+/// 1. If tz_hour is Some(0) and tz_minute is Some(0) or None, it's UTC ('Z' suffix)
+/// 2. If tz_hour/tz_minute are set, use the fixed offset
+/// 3. If tzid is provided, parse as IANA timezone name
+/// 4. Otherwise, assume the time is already in local timezone (floating time)
+fn convert_to_local(
+    naive_dt: NaiveDateTime,
+    tz_hour: Option<u8>,
+    tz_minute: Option<u8>,
+    tz_minus: bool,
+    tzid: Option<&str>,
+) -> DateTime<Local> {
+    // Check for explicit UTC offset in the PartialDateTime
+    if let Some(hour_offset) = tz_hour {
+        let minute_offset = tz_minute.unwrap_or(0);
+        let total_seconds = (hour_offset as i32 * 3600) + (minute_offset as i32 * 60);
+        let offset_seconds = if tz_minus {
+            -total_seconds
+        } else {
+            total_seconds
+        };
+
+        if let Some(fixed_offset) = FixedOffset::east_opt(offset_seconds) {
+            if let Some(dt_with_offset) = fixed_offset.from_local_datetime(&naive_dt).single() {
+                return dt_with_offset.with_timezone(&Local);
+            }
+        }
+    }
+
+    // Try TZID parameter (IANA timezone name like "America/New_York")
+    if let Some(tz_name) = tzid {
+        if let Ok(iana_tz) = tz_name.parse::<IanaTz>() {
+            if let Some(dt_with_tz) = iana_tz.from_local_datetime(&naive_dt).single() {
+                return dt_with_tz.with_timezone(&Local);
+            }
+        }
+    }
+
+    // Floating time - assume it's already in local timezone
+    Local
+        .from_local_datetime(&naive_dt)
+        .single()
+        .unwrap_or_else(|| {
+            // Fallback for ambiguous times (DST transitions)
+            Local.from_local_datetime(&naive_dt).earliest().unwrap_or_else(|| {
+                // Last resort - treat as UTC
+                DateTime::from_naive_utc_and_offset(naive_dt, *Local::now().offset())
+            })
+        })
 }
 
 /// Get RRULE string from component
