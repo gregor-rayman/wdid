@@ -639,29 +639,45 @@ impl eframe::App for WdidApp {
                     feed_color,
                 } = actions.calendar_action
                 {
-                    // Build event snapshot: "color:summary" format
-                    let snapshot = format!(
-                        "{}:{}",
-                        feed_color.as_deref().unwrap_or("#808080"),
-                        summary
-                    );
+                    // Check if an entry already exists for this event
+                    let existing_entry = self
+                        .entries
+                        .iter()
+                        .find(|e| e.event_uid.as_ref() == Some(&event_uid));
 
-                    let date_str = self.view_state.current_date.format("%Y-%m-%d").to_string();
-                    let new_entry = NewDiaryEntry {
-                        date: date_str,
-                        start_time,
-                        duration,
-                        content: String::new(),
-                        event_uid: Some(event_uid),
-                        event_snapshot: Some(snapshot),
-                    };
+                    if let Some(entry) = existing_entry {
+                        // Start editing the existing entry
+                        self.view_state.editing_entry_id = Some(entry.id);
+                        self.view_state.edit_buffer = entry.content.clone();
+                        self.view_state.start_time_buffer = entry.start_time.clone();
+                        self.view_state.duration_buffer =
+                            entry.duration.map(|d| d.to_string()).unwrap_or_default();
+                        self.view_state.edit_focus_set = false;
+                    } else {
+                        // Create a new entry linked to this event
+                        let snapshot = format!(
+                            "{}:{}",
+                            feed_color.as_deref().unwrap_or("#808080"),
+                            summary
+                        );
 
-                    match self.db.save_entry(&new_entry) {
-                        Ok(_id) => {
-                            needs_reload = true;
-                        }
-                        Err(e) => {
-                            eprintln!("Failed to create linked entry: {}", e);
+                        let date_str = self.view_state.current_date.format("%Y-%m-%d").to_string();
+                        let new_entry = NewDiaryEntry {
+                            date: date_str,
+                            start_time,
+                            duration,
+                            content: String::new(),
+                            event_uid: Some(event_uid),
+                            event_snapshot: Some(snapshot),
+                        };
+
+                        match self.db.save_entry(&new_entry) {
+                            Ok(_id) => {
+                                needs_reload = true;
+                            }
+                            Err(e) => {
+                                eprintln!("Failed to create linked entry: {}", e);
+                            }
                         }
                     }
                 }
