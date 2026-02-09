@@ -59,8 +59,13 @@ impl Database {
         // Migration: Add status column to calendar_events if it doesn't exist
         // This handles existing databases that were created before this feature
         let has_status_column: bool = conn
-            .prepare("SELECT status FROM calendar_events LIMIT 1")
-            .is_ok();
+            .query_row(
+                "SELECT COUNT(*) FROM pragma_table_info('calendar_events') WHERE name = 'status'",
+                [],
+                |row| row.get::<_, i64>(0),
+            )
+            .unwrap_or(0)
+            > 0;
         if !has_status_column {
             conn.execute(
                 "ALTER TABLE calendar_events ADD COLUMN status TEXT DEFAULT 'accepted'",
