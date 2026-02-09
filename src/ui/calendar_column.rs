@@ -58,11 +58,11 @@ pub fn render_all_day_events(ui: &mut Ui, events: &[CalendarEvent]) {
 /// Render a single all-day event as a compact chip.
 fn render_all_day_chip(ui: &mut Ui, event: &CalendarEvent, color: Color32) {
     // Determine if event should be muted based on status
-    let is_declined = event.status == EventStatus::Declined;
-    let is_unconfirmed = matches!(event.status, EventStatus::Tentative | EventStatus::NeedsAction);
+    let is_cancelled = event.status == EventStatus::Cancelled;
+    let is_tentative = event.status == EventStatus::Tentative;
 
-    // Mute colors for declined/unconfirmed events
-    let display_color = if is_declined || is_unconfirmed {
+    // Mute colors for cancelled/tentative events
+    let display_color = if is_cancelled || is_tentative {
         color.gamma_multiply(0.4)
     } else {
         color
@@ -75,9 +75,9 @@ fn render_all_day_chip(ui: &mut Ui, event: &CalendarEvent, color: Color32) {
         .inner_margin(Vec2::new(8.0, 4.0))
         .show(ui, |ui| {
             let text = RichText::new(&event.summary);
-            let styled_text = if is_declined {
+            let styled_text = if is_cancelled {
                 text.weak().strikethrough()
-            } else if is_unconfirmed {
+            } else if is_tentative {
                 text.weak()
             } else {
                 text
@@ -120,11 +120,11 @@ fn render_event_card(ui: &mut Ui, event: &CalendarEvent) -> CalendarAction {
     let time_display = event.time_display();
 
     // Determine if event should be muted based on status
-    let is_declined = event.status == EventStatus::Declined;
-    let is_unconfirmed = matches!(event.status, EventStatus::Tentative | EventStatus::NeedsAction);
+    let is_cancelled = event.status == EventStatus::Cancelled;
+    let is_tentative = event.status == EventStatus::Tentative;
 
-    // Mute colors for declined/unconfirmed events
-    let display_color = if is_declined || is_unconfirmed {
+    // Mute colors for cancelled/tentative events
+    let display_color = if is_cancelled || is_tentative {
         color.gamma_multiply(0.4)
     } else {
         color
@@ -158,9 +158,9 @@ fn render_event_card(ui: &mut Ui, event: &CalendarEvent) -> CalendarAction {
                     ui.horizontal(|ui| {
                         if !time_display.is_empty() {
                             let time_text = RichText::new(&time_display).small().strong();
-                            let styled_time = if is_declined {
+                            let styled_time = if is_cancelled {
                                 time_text.weak().strikethrough()
-                            } else if is_unconfirmed {
+                            } else if is_tentative {
                                 time_text.weak()
                             } else {
                                 time_text
@@ -180,9 +180,9 @@ fn render_event_card(ui: &mut Ui, event: &CalendarEvent) -> CalendarAction {
                     });
                     // Summary with status-based styling
                     let summary_text = RichText::new(&event.summary);
-                    let styled_summary = if is_declined {
+                    let styled_summary = if is_cancelled {
                         summary_text.weak().strikethrough()
-                    } else if is_unconfirmed {
+                    } else if is_tentative {
                         summary_text.weak()
                     } else {
                         summary_text
