@@ -9,6 +9,7 @@ arboard = { version = "3.6.1", features = ["wayland-data-control"] }
 calcard = "0.3"
 chrono = "0.4"
 chrono-tz = "0.10"
+dark-light = "2.0"
 directories = "6.0.0"
 eframe = "0.32.0"
 egui = "0.32.0"

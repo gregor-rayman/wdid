@@ -390,10 +390,27 @@ impl WdidApp {
     }
 }
 
+/// Resolves the theme preference to egui::Visuals
+fn resolve_visuals(pref: &str) -> egui::Visuals {
+    match pref {
+        "light" => egui::Visuals::light(),
+        "dark" => egui::Visuals::dark(),
+        _ => {
+            // Use dark-light crate to detect system preference
+            match dark_light::detect() {
+                Ok(dark_light::Mode::Light) => egui::Visuals::light(),
+                Ok(dark_light::Mode::Dark) => egui::Visuals::dark(),
+                _ => egui::Visuals::light(), // Default to dark on detection failure
+            }
+        }
+    }
+}
+
 impl eframe::App for WdidApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         // Store context for tray module to request repaints when window is hidden
         crate::tray::set_egui_context(ctx.clone());
+        ctx.set_visuals(resolve_visuals(&self.config.theme));
 
         // Handle close-to-tray FIRST: hide window instead of quitting
         // Must be at the very start of update() to catch close_requested before it clears

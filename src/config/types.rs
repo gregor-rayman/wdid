@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 #[serde(default)]
 pub struct Config {
     pub calendars: Vec<CalendarFeed>,
+    pub theme: String,
 }
 
 #[derive(Deserialize, Clone, Debug)]
