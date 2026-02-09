@@ -127,7 +127,11 @@ fn render_edit_mode(ui: &mut Ui, state: &mut DiaryViewState, entry: &DiaryEntry)
         let start_time = if state.start_time_buffer.trim().is_empty() {
             entry.start_time.clone()
         } else {
-            state.start_time_buffer.trim().to_string()
+            if let Ok(start) = chrono::NaiveTime::parse_from_str(&state.start_time_buffer.trim().to_string(), "%H:%M") {
+                start.format("%H:%M").to_string()
+            } else {
+                entry.start_time.clone()
+            }
         };
 
         action = EntryAction::Save {

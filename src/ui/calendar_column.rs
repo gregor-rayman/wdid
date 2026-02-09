@@ -157,13 +157,13 @@ fn render_event_card(ui: &mut Ui, event: &CalendarEvent) -> CalendarAction {
                     // Time display and add note button
                     ui.horizontal(|ui| {
                         if !time_display.is_empty() {
-                            let time_text = RichText::new(&time_display).small().strong();
+                            let time_text = RichText::new(&time_display).small();
                             let styled_time = if is_declined {
                                 time_text.weak().strikethrough()
                             } else if is_unconfirmed {
                                 time_text.weak()
                             } else {
-                                time_text
+                                time_text.strong()
                             };
                             ui.label(styled_time);
                         }
