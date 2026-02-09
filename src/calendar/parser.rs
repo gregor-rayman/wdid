@@ -164,7 +164,7 @@ fn get_rrule_string(component: &ICalendarComponent) -> Option<String> {
         // RRULE is stored as RecurrenceRule variant
         if let ICalendarValue::RecurrenceRule(rule) = v {
             // Convert back to string for rrule crate
-            Some(format!("{:?}", rule)) // This may need adjustment based on actual API
+            Some(rule.to_string()) // This may need adjustment based on actual API
         } else if let ICalendarValue::Text(text) = v {
             Some(text.clone())
         } else {

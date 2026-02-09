@@ -1,4 +1,4 @@
-use chrono::Days;
+use chrono::{Days, Local};
 use eframe::egui::{self, Align, Layout, Sense};
 
 use super::DiaryViewState;
@@ -40,6 +40,10 @@ pub fn render_header(
                 .current_date
                 .checked_add_days(Days::new(1))
                 .unwrap_or(state.current_date);
+        }
+
+        if ui.button("Today").clicked() {
+            state.current_date = Local::now().date_naive();
         }
 
         // Spacer to push search and refresh to the right

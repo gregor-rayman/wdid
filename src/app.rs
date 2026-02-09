@@ -173,10 +173,10 @@ impl WdidApp {
         feed_name: Option<String>,
         feed_color: Option<String>,
     ) {
-        // Calculate date range: current date +/- 7 days
+        // Calculate date range: current date +/- 31 days
         let today = Local::now().date_naive();
-        let range_start = today - Duration::days(7);
-        let range_end = today + Duration::days(7);
+        let range_start = today - Duration::days(31);
+        let range_end = today + Duration::days(31);
 
         // Parse the iCal data
         match parse_ical(
