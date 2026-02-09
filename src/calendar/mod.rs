@@ -4,5 +4,5 @@ mod types;
 
 pub use fetcher::{spawn_calendar_worker, CalendarCommand, CalendarResult};
 pub use parser::parse_ical;
-pub use types::CalendarEvent;
+pub use types::{CalendarEvent, EventStatus};
 

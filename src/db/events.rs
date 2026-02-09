@@ -2,7 +2,7 @@ use chrono::{NaiveDate, NaiveTime};
 use rusqlite::{params, Row};
 
 use super::Database;
-use crate::calendar::CalendarEvent;
+use crate::calendar::{CalendarEvent, EventStatus};
 use crate::error::Result;
 
 /// Cached feed metadata
@@ -22,8 +22,8 @@ impl Database {
         self.conn().execute(
             r#"INSERT OR REPLACE INTO calendar_events
                (feed_url, event_uid, summary, dtstart_date, dtstart_time,
-                dtend_date, dtend_time, all_day, rrule)
-               VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)"#,
+                dtend_date, dtend_time, all_day, rrule, status)
+               VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)"#,
             params![
                 event.feed_url,
                 event.event_uid,
@@ -34,6 +34,7 @@ impl Database {
                 event.dtend_time.map(|t| t.format("%H:%M").to_string()),
                 event.all_day as i32,
                 event.rrule,
+                event.status.as_str(),
             ],
         )?;
         Ok(self.conn().last_insert_rowid())
@@ -45,7 +46,7 @@ impl Database {
         let mut stmt = self.conn().prepare_cached(
             r#"SELECT e.id, e.feed_url, e.event_uid, e.summary,
                       e.dtstart_date, e.dtstart_time, e.dtend_date, e.dtend_time,
-                      e.all_day, e.rrule, f.name, f.color
+                      e.all_day, e.rrule, e.status, f.name, f.color
                FROM calendar_events e
                LEFT JOIN calendar_feeds f ON e.feed_url = f.url
                WHERE e.dtstart_date = ?1
@@ -114,6 +115,7 @@ impl CalendarEvent {
         let dtend_date_str: Option<String> = row.get(6).unwrap();
         let dtend_time_str: Option<String> = row.get(7).unwrap();
         let all_day: i32 = row.get(8).unwrap();
+        let status_str: Option<String> = row.get(10).unwrap();
 
         Self {
             id: row.get(0).unwrap(),
@@ -129,8 +131,9 @@ impl CalendarEvent {
                 .and_then(|s| NaiveTime::parse_from_str(&s, "%H:%M").ok()),
             all_day: all_day != 0,
             rrule: row.get(9).unwrap(),
-            feed_name: row.get(10).unwrap(),
-            feed_color: row.get(11).unwrap(),
+            status: EventStatus::from_str(status_str.as_deref().unwrap_or("accepted")),
+            feed_name: row.get(11).unwrap(),
+            feed_color: row.get(12).unwrap(),
         }
     }
 }

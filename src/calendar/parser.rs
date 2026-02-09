@@ -2,13 +2,14 @@
 
 use anyhow::{anyhow, Result};
 use calcard::icalendar::{
-    ICalendar, ICalendarComponent, ICalendarComponentType, ICalendarProperty, ICalendarValue,
+    ICalendar, ICalendarComponent, ICalendarComponentType, ICalendarParameterName,
+    ICalendarParameterValue, ICalendarParticipationStatus, ICalendarProperty, ICalendarValue,
 };
 use chrono::{DateTime, Datelike, FixedOffset, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone};
 use chrono_tz::Tz as IanaTz;
 use rrule::{RRuleSet, Tz};
 
-use super::types::CalendarEvent;
+use super::types::{CalendarEvent, EventStatus};
 
 /// Parse iCal data into CalendarEvents, expanding recurrences within date range.
 ///
@@ -52,6 +53,9 @@ pub fn parse_ical(
         // Parse DTEND (optional)
         let (dtend_date, dtend_time) = parse_dtend(component).unwrap_or((None, None));
 
+        // Parse participation status from ATTENDEE entries
+        let status = parse_participation_status(component);
+
         // Check for RRULE
         let rrule_str = get_rrule_string(component);
 
@@ -79,6 +83,7 @@ pub fn parse_ical(
                     rrule: Some(rrule.clone()),
                     feed_name: feed_name.clone(),
                     feed_color: feed_color.clone(),
+                    status,
                 });
             }
         } else {
@@ -97,6 +102,7 @@ pub fn parse_ical(
                     rrule: None,
                     feed_name: feed_name.clone(),
                     feed_color: feed_color.clone(),
+                    status,
                 });
             }
         }
@@ -116,6 +122,68 @@ fn get_text_property(component: &ICalendarComponent, prop: &ICalendarProperty) -
             }
         })
     })
+}
+
+/// Parse participation status from ATTENDEE entries.
+///
+/// In a personal calendar feed, the user is typically the only attendee or
+/// the feed only contains events relevant to them. We look for the PARTSTAT
+/// parameter on ATTENDEE entries to determine the user's response status.
+///
+/// Priority:
+/// 1. If any ATTENDEE has PARTSTAT=DECLINED, return Declined
+/// 2. If any ATTENDEE has PARTSTAT=TENTATIVE, return Tentative
+/// 3. If any ATTENDEE has PARTSTAT=NEEDS-ACTION, return NeedsAction
+/// 4. Otherwise return Accepted (default for events without attendees or all accepted)
+fn parse_participation_status(component: &ICalendarComponent) -> EventStatus {
+    let mut has_tentative = false;
+    let mut has_needs_action = false;
+
+    // Iterate through all entries looking for ATTENDEE properties
+    for entry in &component.entries {
+        if entry.name != ICalendarProperty::Attendee {
+            continue;
+        }
+
+        // Look for PARTSTAT parameter
+        for param in &entry.params {
+            if param.name != ICalendarParameterName::Partstat {
+                continue;
+            }
+
+            if let ICalendarParameterValue::Partstat(partstat) = &param.value {
+                match partstat {
+                    ICalendarParticipationStatus::Declined => {
+                        // Declined takes highest priority - return immediately
+                        return EventStatus::Declined;
+                    }
+                    ICalendarParticipationStatus::Tentative => {
+                        has_tentative = true;
+                    }
+                    ICalendarParticipationStatus::NeedsAction => {
+                        has_needs_action = true;
+                    }
+                    ICalendarParticipationStatus::Accepted => {
+                        // Accepted is the default, continue checking
+                    }
+                    _ => {
+                        // Other statuses (Delegated, Completed, InProcess, Failed)
+                        // treat as needs action
+                        has_needs_action = true;
+                    }
+                }
+            }
+        }
+    }
+
+    // Return based on what we found
+    if has_tentative {
+        EventStatus::Tentative
+    } else if has_needs_action {
+        EventStatus::NeedsAction
+    } else {
+        EventStatus::Accepted
+    }
 }
 
 /// Parse DTSTART from component, returns (date, time, is_all_day)

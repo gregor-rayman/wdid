@@ -2,7 +2,7 @@
 
 use egui::{Color32, CornerRadius, Frame, RichText, Stroke, Ui, Vec2};
 
-use crate::calendar::CalendarEvent;
+use crate::calendar::{CalendarEvent, EventStatus};
 
 /// Default color for events without a configured feed color.
 const DEFAULT_EVENT_COLOR: Color32 = Color32::GRAY;
@@ -57,13 +57,32 @@ pub fn render_all_day_events(ui: &mut Ui, events: &[CalendarEvent]) {
 
 /// Render a single all-day event as a compact chip.
 fn render_all_day_chip(ui: &mut Ui, event: &CalendarEvent, color: Color32) {
+    // Determine if event should be muted based on status
+    let is_declined = event.status == EventStatus::Declined;
+    let is_unconfirmed = matches!(event.status, EventStatus::Tentative | EventStatus::NeedsAction);
+
+    // Mute colors for declined/unconfirmed events
+    let display_color = if is_declined || is_unconfirmed {
+        color.gamma_multiply(0.4)
+    } else {
+        color
+    };
+
     Frame::new()
-        .fill(color.gamma_multiply(0.15))
-        .stroke(Stroke::new(2.0, color))
+        .fill(display_color.gamma_multiply(0.15))
+        .stroke(Stroke::new(2.0, display_color))
         .corner_radius(CornerRadius::same(4))
         .inner_margin(Vec2::new(8.0, 4.0))
         .show(ui, |ui| {
-            ui.label(&event.summary);
+            let text = RichText::new(&event.summary);
+            let styled_text = if is_declined {
+                text.weak().strikethrough()
+            } else if is_unconfirmed {
+                text.weak()
+            } else {
+                text
+            };
+            ui.label(styled_text);
         });
 }
 
@@ -100,6 +119,17 @@ fn render_event_card(ui: &mut Ui, event: &CalendarEvent) -> CalendarAction {
     let color = parse_color(event.feed_color.as_deref());
     let time_display = event.time_display();
 
+    // Determine if event should be muted based on status
+    let is_declined = event.status == EventStatus::Declined;
+    let is_unconfirmed = matches!(event.status, EventStatus::Tentative | EventStatus::NeedsAction);
+
+    // Mute colors for declined/unconfirmed events
+    let display_color = if is_declined || is_unconfirmed {
+        color.gamma_multiply(0.4)
+    } else {
+        color
+    };
+
     // Frame with colored left border effect
     // We achieve this by nesting: outer frame with left margin colored, inner content
     Frame::new()
@@ -118,7 +148,7 @@ fn render_event_card(ui: &mut Ui, event: &CalendarEvent) -> CalendarAction {
                         ne: 0,
                         se: 0,
                     },
-                    color,
+                    display_color,
                 );
 
                 // Event content
@@ -127,7 +157,15 @@ fn render_event_card(ui: &mut Ui, event: &CalendarEvent) -> CalendarAction {
                     // Time display and add note button
                     ui.horizontal(|ui| {
                         if !time_display.is_empty() {
-                            ui.label(RichText::new(&time_display).small().strong());
+                            let time_text = RichText::new(&time_display).small().strong();
+                            let styled_time = if is_declined {
+                                time_text.weak().strikethrough()
+                            } else if is_unconfirmed {
+                                time_text.weak()
+                            } else {
+                                time_text
+                            };
+                            ui.label(styled_time);
                         }
                         // Add note button
                         let add_btn = ui.small_button("📝").on_hover_text("Add note for this event");
@@ -140,8 +178,16 @@ fn render_event_card(ui: &mut Ui, event: &CalendarEvent) -> CalendarAction {
                             };
                         }
                     });
-                    // Summary
-                    ui.label(&event.summary);
+                    // Summary with status-based styling
+                    let summary_text = RichText::new(&event.summary);
+                    let styled_summary = if is_declined {
+                        summary_text.weak().strikethrough()
+                    } else if is_unconfirmed {
+                        summary_text.weak()
+                    } else {
+                        summary_text
+                    };
+                    ui.label(styled_summary);
                     ui.add_space(4.0);
                 });
             });

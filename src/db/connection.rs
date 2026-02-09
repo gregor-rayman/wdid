@@ -39,6 +39,7 @@ impl Database {
                 dtend_time TEXT,
                 all_day INTEGER DEFAULT 0,
                 rrule TEXT,
+                status TEXT DEFAULT 'accepted',
                 cached_at TEXT NOT NULL DEFAULT (datetime('now')),
                 UNIQUE(feed_url, event_uid, dtstart_date)
             );
@@ -54,6 +55,18 @@ impl Database {
             );
         "#,
         )?;
+
+        // Migration: Add status column to calendar_events if it doesn't exist
+        // This handles existing databases that were created before this feature
+        let has_status_column: bool = conn
+            .prepare("SELECT status FROM calendar_events LIMIT 1")
+            .is_ok();
+        if !has_status_column {
+            conn.execute(
+                "ALTER TABLE calendar_events ADD COLUMN status TEXT DEFAULT 'accepted'",
+                [],
+            )?;
+        }
 
         Ok(Self { conn })
     }
