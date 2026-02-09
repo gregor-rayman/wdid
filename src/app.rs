@@ -186,6 +186,7 @@ impl WdidApp {
             range_end,
             feed_name.clone(),
             feed_color.clone(),
+            self.config.user_email.as_deref(),
         ) {
             Ok(events) => {
                 eprintln!(

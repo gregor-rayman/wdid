@@ -2,8 +2,8 @@
 
 use anyhow::{anyhow, Result};
 use calcard::icalendar::{
-    ICalendar, ICalendarComponent, ICalendarComponentType, ICalendarProperty, ICalendarStatus,
-    ICalendarValue,
+    ICalendar, ICalendarComponent, ICalendarComponentType, ICalendarParameterName,
+    ICalendarParameterValue, ICalendarParticipationStatus, ICalendarProperty, ICalendarValue, Uri,
 };
 use chrono::{DateTime, Datelike, FixedOffset, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone};
 use chrono_tz::Tz as IanaTz;
@@ -20,6 +20,7 @@ use super::types::{CalendarEvent, EventStatus};
 /// * `range_end` - End of date range for recurrence expansion
 /// * `feed_name` - Optional display name for the feed
 /// * `feed_color` - Optional color for the feed (e.g., "#4A90D9")
+/// * `user_email` - Optional user email to identify their ATTENDEE entry
 pub fn parse_ical(
     ical_data: &str,
     feed_url: &str,
@@ -27,6 +28,7 @@ pub fn parse_ical(
     range_end: NaiveDate,
     feed_name: Option<String>,
     feed_color: Option<String>,
+    user_email: Option<&str>,
 ) -> Result<Vec<CalendarEvent>> {
     let calendar = ICalendar::parse(ical_data)
         .map_err(|e| anyhow!("Failed to parse iCal: {:?}", e))?;
@@ -53,8 +55,8 @@ pub fn parse_ical(
         // Parse DTEND (optional)
         let (dtend_date, dtend_time) = parse_dtend(component).unwrap_or((None, None));
 
-        // Parse event STATUS property
-        let status = parse_event_status(component);
+        // Parse participation status from ATTENDEE entries
+        let status = parse_participation_status(component, user_email);
 
         // Check for RRULE
         let rrule_str = get_rrule_string(component);
@@ -124,24 +126,80 @@ fn get_text_property(component: &ICalendarComponent, prop: &ICalendarProperty) -
     })
 }
 
-/// Parse the STATUS property from an iCal event.
+/// Parse participation status from ATTENDEE entries.
 ///
-/// The STATUS property indicates the overall status of the event:
-/// - CONFIRMED: The event is confirmed
-/// - TENTATIVE: The event is tentatively scheduled
-/// - CANCELLED: The event has been cancelled
+/// If `user_email` is provided, looks for the ATTENDEE entry matching that email
+/// and returns its PARTSTAT. If not found or no user_email provided, defaults to Accepted.
 ///
-/// If no STATUS is present, defaults to Confirmed.
-fn parse_event_status(component: &ICalendarComponent) -> EventStatus {
-    match component.status() {
-        Some(ICalendarStatus::Cancelled) => EventStatus::Cancelled,
-        Some(ICalendarStatus::Tentative) => EventStatus::Tentative,
-        // CONFIRMED is explicit, but also default for missing STATUS
-        Some(ICalendarStatus::Confirmed) | None => EventStatus::Confirmed,
-        // Other status values (NeedsAction, Completed, etc. are for TODOs)
-        // treat them as confirmed for events
-        _ => EventStatus::Confirmed,
+/// The ATTENDEE value is typically a mailto: URI like "mailto:user@example.com".
+fn parse_participation_status(component: &ICalendarComponent, user_email: Option<&str>) -> EventStatus {
+    // If no user email configured, default to Accepted
+    let user_email = match user_email {
+        Some(email) => email.to_lowercase(),
+        None => return EventStatus::Accepted,
+    };
+
+    // Look for ATTENDEE entry matching the user's email
+    for entry in &component.entries {
+        if entry.name != ICalendarProperty::Attendee {
+            continue;
+        }
+
+        // Check if this ATTENDEE matches the user's email
+        // The value is typically a URI like "mailto:user@example.com"
+        let attendee_email = entry.values.first().and_then(|v| {
+            if let ICalendarValue::Uri(uri) = v {
+                // Extract email from mailto: URI
+                // Uri is an enum with Location(String) variant for mailto: URIs
+                let uri_str = match uri {
+                    Uri::Location(s) => s.to_lowercase(),
+                    Uri::Data(_) => return None, // Data URIs are not email addresses
+                };
+                if uri_str.starts_with("mailto:") {
+                    Some(uri_str.trim_start_matches("mailto:").to_string())
+                } else {
+                    Some(uri_str)
+                }
+            } else if let ICalendarValue::Text(text) = v {
+                // Sometimes it's just text
+                let text_lower = text.to_lowercase();
+                if text_lower.starts_with("mailto:") {
+                    Some(text_lower.trim_start_matches("mailto:").to_string())
+                } else {
+                    Some(text_lower)
+                }
+            } else {
+                None
+            }
+        });
+
+        // Check if this attendee matches the user
+        if let Some(email) = attendee_email {
+            if email == user_email {
+                // Found the user's ATTENDEE entry, get PARTSTAT
+                for param in &entry.params {
+                    if param.name != ICalendarParameterName::Partstat {
+                        continue;
+                    }
+
+                    if let ICalendarParameterValue::Partstat(partstat) = &param.value {
+                        return match partstat {
+                            ICalendarParticipationStatus::Declined => EventStatus::Declined,
+                            ICalendarParticipationStatus::Tentative => EventStatus::Tentative,
+                            ICalendarParticipationStatus::NeedsAction => EventStatus::NeedsAction,
+                            ICalendarParticipationStatus::Accepted => EventStatus::Accepted,
+                            _ => EventStatus::Accepted, // Other statuses treated as accepted
+                        };
+                    }
+                }
+                // User found but no PARTSTAT, default to Accepted
+                return EventStatus::Accepted;
+            }
+        }
     }
+
+    // User not found in attendees, default to Accepted
+    EventStatus::Accepted
 }
 
 /// Parse DTSTART from component, returns (date, time, is_all_day)

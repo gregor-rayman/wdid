@@ -1,36 +1,39 @@
 use chrono::{NaiveDate, NaiveTime};
 
-/// Status of a calendar event.
+/// Participation status for a calendar event.
 ///
-/// This represents the event's STATUS property from iCal (CONFIRMED, TENTATIVE, CANCELLED).
+/// This represents the user's response to an event invitation (from ATTENDEE PARTSTAT).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, serde::Serialize)]
 pub enum EventStatus {
-    /// Event is confirmed
+    /// User has accepted the event
     #[default]
-    Confirmed,
-    /// Event has been cancelled
-    Cancelled,
-    /// Event is tentatively scheduled
+    Accepted,
+    /// User has declined the event
+    Declined,
+    /// User has tentatively accepted (unconfirmed)
     Tentative,
+    /// User hasn't responded yet
+    NeedsAction,
 }
 
 impl EventStatus {
     /// Convert to string for database storage.
     pub fn as_str(&self) -> &'static str {
         match self {
-            EventStatus::Confirmed => "confirmed",
-            EventStatus::Cancelled => "cancelled",
+            EventStatus::Accepted => "accepted",
+            EventStatus::Declined => "declined",
             EventStatus::Tentative => "tentative",
+            EventStatus::NeedsAction => "needs_action",
         }
     }
 
     /// Parse from string (database retrieval).
     pub fn from_str(s: &str) -> Self {
         match s {
-            "cancelled" | "declined" => EventStatus::Cancelled,
+            "declined" => EventStatus::Declined,
             "tentative" => EventStatus::Tentative,
-            // Default for "confirmed", "accepted", or unknown
-            _ => EventStatus::Confirmed,
+            "needs_action" => EventStatus::NeedsAction,
+            _ => EventStatus::Accepted, // Default for "accepted" or unknown
         }
     }
 }
@@ -50,7 +53,7 @@ pub struct CalendarEvent {
     pub rrule: Option<String>,      // Original RRULE for re-expansion
     pub feed_name: Option<String>,  // From config
     pub feed_color: Option<String>, // From config, e.g. "#4A90D9"
-    pub status: EventStatus,        // Event's status (Confirmed, Tentative, Cancelled)
+    pub status: EventStatus,        // User's participation status
 }
 
 impl CalendarEvent {

@@ -3,6 +3,8 @@ use serde::{Deserialize, Serialize};
 #[derive(Deserialize, Default, Clone, Debug)]
 #[serde(default)]
 pub struct Config {
+    /// User's email address for identifying their ATTENDEE entry in calendar events
+    pub user_email: Option<String>,
     pub calendars: Vec<CalendarFeed>,
 }
 

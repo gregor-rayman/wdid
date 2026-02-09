@@ -11,6 +11,10 @@ pub enum ConfigResult {
 }
 
 const DEFAULT_CONFIG: &str = r##"# wdid configuration
+
+# Your email address (used to identify your attendance status in calendar events)
+# user_email = "you@example.com"
+
 # Add calendar feeds below:
 # [[calendars]]
 # url = "https://calendar.google.com/calendar/ical/..."
