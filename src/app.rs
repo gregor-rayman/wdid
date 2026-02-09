@@ -178,6 +178,14 @@ impl WdidApp {
         let range_start = today - Duration::days(31);
         let range_end = today + Duration::days(31);
 
+        // Find user_email for this feed from config
+        let user_email = self
+            .config
+            .calendars
+            .iter()
+            .find(|f| f.url == feed_url)
+            .and_then(|f| f.user_email.as_deref());
+
         // Parse the iCal data
         match parse_ical(
             data,
@@ -186,7 +194,7 @@ impl WdidApp {
             range_end,
             feed_name.clone(),
             feed_color.clone(),
-            self.config.user_email.as_deref(),
+            user_email,
         ) {
             Ok(events) => {
                 eprintln!(

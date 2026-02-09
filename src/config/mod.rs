@@ -12,14 +12,12 @@ pub enum ConfigResult {
 
 const DEFAULT_CONFIG: &str = r##"# wdid configuration
 
-# Your email address (used to identify your attendance status in calendar events)
-# user_email = "you@example.com"
-
 # Add calendar feeds below:
 # [[calendars]]
 # url = "https://calendar.google.com/calendar/ical/..."
 # name = "Work"
 # color = "#3b82f6"
+# user_email = "you@example.com"  # Your email for this calendar (for attendance status)
 "##;
 
 pub fn load_config(path: &Path) -> ConfigResult {
