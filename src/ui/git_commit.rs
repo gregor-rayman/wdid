@@ -7,7 +7,6 @@ use crate::db::GitCommit;
 /// Render a single git commit message.
 pub fn render_git_commit(
     ui: &mut Ui,
-    state: &mut DiaryViewState,
     entry: &GitCommit,
     cache: &mut CommonMarkCache,
 ) {

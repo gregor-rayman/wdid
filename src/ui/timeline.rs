@@ -329,7 +329,7 @@ fn render_git_commits(
 
     for entry in entries {
         ui.add_space(4.0);
-        render_git_commit(ui, state, entry, cache);
+        render_git_commit(ui, entry, cache);
     }
 
     ui.add_space(16.0);
