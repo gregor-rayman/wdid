@@ -557,6 +557,7 @@ impl eframe::App for WdidApp {
                 }
             }
             if inserted > 0 {
+                self.load_git_commits();
                 ctx.request_repaint();
             }
         }
