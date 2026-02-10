@@ -53,6 +53,14 @@ impl Database {
                 last_refresh TEXT,
                 last_error TEXT
             );
+            CREATE TABLE IF NOT EXISTS git_commits (
+                id TEXT PRIMARY KEY,
+                date TEXT NOT NULL,
+                time TEXT NOT NULL,
+                folder TEXT NOT NULL,
+                description TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_commits_date ON git_commits(date);
         "#,
         )?;
 

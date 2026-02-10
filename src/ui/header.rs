@@ -10,6 +10,7 @@ pub enum HeaderAction {
     #[default]
     None,
     RefreshCalendars,
+    RefreshGitCommits,
 }
 
 /// Render the header bar with date navigation and search box.
@@ -23,6 +24,9 @@ pub fn render_header(
     let mut export_action = ExportAction::None;
 
     ui.horizontal(|ui| {
+        if ui.button("Today").clicked() {
+            state.current_date = Local::now().date_naive();
+        }
         // Left arrow - go to previous day
         if ui.button("◀").clicked() {
             state.current_date = state
@@ -31,8 +35,11 @@ pub fn render_header(
                 .unwrap_or(state.current_date);
         }
 
-        // Date label
-        ui.label(state.current_date.format("%A, %B %d, %Y").to_string());
+        // Date label with fixed width
+        ui.add_sized(
+            egui::vec2(120.0, 20.0),
+            egui::Label::new(state.current_date.format("%a, %b %d, %Y").to_string()),
+        );
 
         // Right arrow - go to next day
         if ui.button("▶").clicked() {
@@ -40,10 +47,6 @@ pub fn render_header(
                 .current_date
                 .checked_add_days(Days::new(1))
                 .unwrap_or(state.current_date);
-        }
-
-        if ui.button("Today").clicked() {
-            state.current_date = Local::now().date_naive();
         }
 
         // Spacer to push search and refresh to the right
@@ -79,6 +82,19 @@ pub fn render_header(
                         action = HeaderAction::RefreshCalendars;
                     }
                     refresh_btn.on_hover_text("Refresh calendar feeds");
+                }
+
+                if state.git_refreshing {
+                    // Show loading indicator (non-interactive)
+                    ui.add(egui::Label::new("⏳").sense(Sense::hover()))
+                        .on_hover_text("Refreshing git commits...");
+                } else {
+                    // Clickable refresh button
+                    let refresh_btn = ui.button("📤");
+                    if refresh_btn.clicked() {
+                        action = HeaderAction::RefreshGitCommits;
+                    }
+                    refresh_btn.on_hover_text("Refresh git commits");
                 }
             }
 

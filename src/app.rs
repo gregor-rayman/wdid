@@ -9,7 +9,7 @@ use egui_commonmark::CommonMarkCache;
 
 use crate::calendar::{parse_ical, spawn_calendar_worker, CalendarCommand, CalendarResult};
 use crate::config::{Config, ConfigResult, WindowState};
-use crate::db::{CachedFeed, Database, DiaryEntry, NewDiaryEntry};
+use crate::db::{CachedFeed, Database, DiaryEntry, NewDiaryEntry, spawn_git_worker, GitCommand, GitResult};
 use crate::export::{
     copy_to_clipboard, format_day_markdown, format_entries_json, format_standup,
     format_weekly_retro, save_to_file, ExportAction,
@@ -43,6 +43,8 @@ pub struct WdidApp {
     entries_date: Option<chrono::NaiveDate>,
     /// Track which date calendar events were loaded for
     calendar_events_date: Option<chrono::NaiveDate>,
+    /// Track which date git commits were loaded for
+    git_commits_date: Option<chrono::NaiveDate>,
     /// Channel to send commands to the calendar worker
     calendar_tx: Sender<CalendarCommand>,
     /// Channel to receive results from the calendar worker
@@ -59,6 +61,8 @@ pub struct WdidApp {
     last_window_save: Instant,
     /// Channel to receive commands from system tray
     tray_rx: Receiver<TrayCommand>,
+    git_rx: Receiver<GitResult>,
+    git_tx: Sender<GitCommand>,
 }
 
 impl WdidApp {
@@ -81,6 +85,8 @@ impl WdidApp {
         // Spawn calendar worker
         let (calendar_tx, calendar_rx) = spawn_calendar_worker();
 
+        let (git_tx, git_rx) = spawn_git_worker();
+
         Self {
             db,
             config,
@@ -91,6 +97,7 @@ impl WdidApp {
             entries: Vec::new(),
             entries_date: None,
             calendar_events_date: None,
+            git_commits_date: None,
             calendar_tx,
             calendar_rx,
             calendar_refresh_triggered: false,
@@ -99,6 +106,8 @@ impl WdidApp {
             last_saved_window_state: WindowState::default(),
             last_window_save: Instant::now(),
             tray_rx,
+            git_rx,
+            git_tx,
         }
     }
 
@@ -113,6 +122,21 @@ impl WdidApp {
             Err(e) => {
                 eprintln!("Failed to load entries: {}", e);
                 self.entries = Vec::new();
+            }
+        }
+    }
+
+    /// Load git commits for the given date from the database.
+    fn load_git_commits(&mut self) {
+        let date_str = self.view_state.current_date.format("%Y-%m-%d").to_string();
+        match self.db.get_git_commits_for_date(&date_str) {
+            Ok(commits) => {
+                self.view_state.git_commits = commits;
+                self.git_commits_date = Some(self.view_state.current_date);
+            }
+            Err(e) => {
+                eprintln!("Failed to load git commits: {}", e);
+                self.view_state.git_commits = Vec::new();
             }
         }
     }
@@ -285,6 +309,16 @@ impl WdidApp {
         }
     }
 
+    fn trigger_git_refresh(&mut self) {
+        if !self.view_state.git_refreshing {
+            self.view_state.git_refreshing = true;
+            println!("Triggering git refresh for folders: {:?}", self.config.work_folders);
+            let _ = self
+                .git_tx
+                .send(GitCommand::RefreshAll(self.config.work_folders.clone(), self.config.work_emails.clone()));
+        }
+    }
+
     /// Save window state if it has changed since last save.
     fn save_window_state_if_changed(&mut self, ctx: &egui::Context) {
         let viewport_info = ctx.input(|i| i.viewport().clone());
@@ -441,6 +475,7 @@ impl eframe::App for WdidApp {
         if now.signed_duration_since(self.last_refresh_check) >= AUTO_REFRESH_INTERVAL {
             self.last_refresh_check = now;
             self.trigger_calendar_refresh();
+            self.trigger_git_refresh()
         }
 
         // Periodically save window state (every 5 seconds if changed)
@@ -502,6 +537,30 @@ impl eframe::App for WdidApp {
             ctx.request_repaint();
         }
 
+        // Poll for git commits
+        while let Ok(result) = self.git_rx.try_recv() {
+            let mut inserted: usize = 0;
+            match result {
+                GitResult::CommitsFound(git_commits) => {
+
+                    for commit in git_commits {
+                        if let Err(e) = self.db.save_git_commit(&commit) {
+                            eprintln!("Failed to save git commit: {}", e);
+                        } else {
+                            inserted += 1;
+                        }
+                    }
+                }
+                GitResult::RefreshComplete => {
+                    eprintln!("Git refresh complete");
+                    self.view_state.git_refreshing = false;
+                }
+            }
+            if inserted > 0 {
+                ctx.request_repaint();
+            }
+        }
+
         // Reload entries if date changed
         if self.entries_date != Some(self.view_state.current_date) {
             self.load_entries();
@@ -510,6 +569,11 @@ impl eframe::App for WdidApp {
         // Reload calendar events if date changed
         if self.calendar_events_date != Some(self.view_state.current_date) {
             self.load_calendar_events();
+        }
+
+        // Reload git commits if date changed
+        if self.git_commits_date != Some(self.view_state.current_date) {
+            self.load_git_commits();
         }
 
         // Handle Ctrl+N for new entry (only if not typing in a text field)
@@ -542,6 +606,9 @@ impl eframe::App for WdidApp {
             // Handle header actions
             if header_action == HeaderAction::RefreshCalendars {
                 self.trigger_calendar_refresh();
+            }
+            if header_action == HeaderAction::RefreshGitCommits {
+                self.trigger_git_refresh();
             }
 
             // Handle export actions
@@ -579,7 +646,7 @@ impl eframe::App for WdidApp {
             if self.first_run && self.entries.is_empty() && !is_search_mode {
                 ui.vertical_centered(|ui| {
                     ui.add_space(50.0);
-                    ui.heading("Welcome to wdid!");
+                    ui.heading("Welcome to What Did I Do!");
                     ui.add_space(10.0);
                     ui.label("Start by adding a diary entry (Ctrl+N), or configure");
                     ui.label("calendar feeds in ~/.config/wdid/config.toml");
@@ -589,6 +656,7 @@ impl eframe::App for WdidApp {
                 let search_results = self.view_state.search_results.take();
                 let calendar_events = std::mem::take(&mut self.view_state.calendar_events);
                 let all_day_events = std::mem::take(&mut self.view_state.all_day_events);
+                let git_commits = std::mem::take(&mut self.view_state.git_commits);
 
                 let entries_to_display: &[DiaryEntry] = if let Some(ref results) = search_results {
                     results.as_slice()
@@ -602,6 +670,7 @@ impl eframe::App for WdidApp {
                     entries_to_display,
                     &calendar_events,
                     &all_day_events,
+                    &git_commits,
                     &mut self.view_state,
                     &mut self.markdown_cache,
                     is_search_mode,
@@ -611,6 +680,7 @@ impl eframe::App for WdidApp {
                 self.view_state.search_results = search_results;
                 self.view_state.calendar_events = calendar_events;
                 self.view_state.all_day_events = all_day_events;
+                self.view_state.git_commits = git_commits;
 
                 // Handle save action
                 if let Some((id, content, start_time, duration)) = actions.save {

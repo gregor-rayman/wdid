@@ -5,6 +5,8 @@ use serde::{Deserialize, Serialize};
 pub struct Config {
     pub calendars: Vec<CalendarFeed>,
     pub theme: String,
+    pub work_folders: Vec<String>,
+    pub work_emails: Vec<String>,
 }
 
 #[derive(Deserialize, Clone, Debug)]

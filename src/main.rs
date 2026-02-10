@@ -46,7 +46,7 @@ fn main() -> eframe::Result<()> {
     };
 
     eframe::run_native(
-        "wdid",
+        "What Did I Do?",
         options,
         Box::new(move |cc| Ok(Box::new(WdidApp::new(cc, paths, tray_rx)))),
     )

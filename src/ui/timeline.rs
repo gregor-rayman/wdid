@@ -7,7 +7,8 @@ use super::calendar_column::{render_all_day_events, render_calendar_events, Cale
 use super::entry::{render_entry, EntryAction};
 use super::state::{Column, DiaryViewState};
 use crate::calendar::CalendarEvent;
-use crate::db::DiaryEntry;
+use crate::db::{DiaryEntry, GitCommit};
+use crate::ui::git_commit::render_git_commit;
 
 /// Result of timeline rendering, containing any pending actions.
 #[derive(Debug, Clone, Default)]
@@ -32,10 +33,12 @@ pub fn render_timeline(
     entries: &[DiaryEntry],
     calendar_events: &[CalendarEvent],
     all_day_events: &[CalendarEvent],
+    git_commits: &[GitCommit],
     state: &mut DiaryViewState,
     cache: &mut CommonMarkCache,
     is_search_mode: bool,
 ) -> TimelineActions {
+    //ui.ctx().set_pixels_per_point(2.0);
     let mut actions = TimelineActions::default();
 
     // Build a set of current calendar event UIDs for orphan detection
@@ -56,7 +59,7 @@ pub fn render_timeline(
     render_all_day_events(ui, all_day_events);
 
     // Check for completely empty state
-    if entries.is_empty() && calendar_events.is_empty() {
+    if entries.is_empty() && calendar_events.is_empty() && git_commits.is_empty() {
         ui.vertical_centered(|ui| {
             ui.add_space(50.0);
             ui.label(egui::RichText::new("No entries for this date").weak());
@@ -70,7 +73,7 @@ pub fn render_timeline(
     let initial_offset = state.scroll_offset;
 
     // Use columns for side-by-side layout
-    ui.columns(2, |columns| {
+    ui.columns(3, |columns| {
         // Left column: Calendar events
         let calendar_response = {
             let ui = &mut columns[0];
@@ -119,14 +122,41 @@ pub fn render_timeline(
                 })
         };
 
+        let git_commit_response = {
+            let ui = &mut columns[2];
+
+            // Detect hover on this column
+            let column_rect = ui.available_rect_before_wrap();
+            if ui.rect_contains_pointer(column_rect) {
+                state.hovered_column = Some(Column::Git);
+            }
+
+            ScrollArea::vertical()
+                .id_salt("git_scroll")
+                .auto_shrink([false, false])
+                .vertical_scroll_offset(initial_offset)
+                .show(ui, |ui| {
+                    render_git_commits(
+                        ui,
+                        git_commits,
+                        state,
+                        cache,
+                        &mut actions,
+                        &calendar_event_uids,
+                    );
+                })
+        };
+
         // Synchronize scroll: use the offset from the hovered/active column
         let calendar_offset = calendar_response.state.offset.y;
         let diary_offset = diary_response.state.offset.y;
+        let git_commit_offset = git_commit_response.state.offset.y;
 
         // Update shared scroll offset based on which column changed
         let new_offset = match state.hovered_column {
             Some(Column::Calendar) => calendar_offset,
             Some(Column::Diary) => diary_offset,
+            Some(Column::Git) => git_commit_offset,
             None => {
                 // No hover, use whichever changed
                 if (calendar_offset - initial_offset).abs() > 0.5 {
@@ -275,6 +305,31 @@ fn render_diary_entries(
         }
 
         prev_time = Some(&entry.start_time);
+    }
+
+    ui.add_space(16.0);
+}
+/// Render diary entries in a scrollable column.
+fn render_git_commits(
+    ui: &mut Ui,
+    entries: &[GitCommit],
+    state: &mut DiaryViewState,
+    cache: &mut CommonMarkCache,
+    actions: &mut TimelineActions,
+    calendar_event_uids: &HashSet<String>,
+) {
+    if entries.is_empty() {
+        ui.vertical_centered(|ui| {
+            ui.add_space(20.0);
+            ui.label(egui::RichText::new("No Git commits").weak());
+        });
+        return;
+    }
+
+
+    for entry in entries {
+        ui.add_space(4.0);
+        render_git_commit(ui, state, entry, cache);
     }
 
     ui.add_space(16.0);

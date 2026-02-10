@@ -3,13 +3,14 @@ use std::collections::HashMap;
 use chrono::{DateTime, Local, NaiveDate, NaiveTime, Timelike};
 
 use crate::calendar::CalendarEvent;
-use crate::db::DiaryEntry;
+use crate::db::{DiaryEntry, GitCommit};
 
 /// Which column is being hovered (for scroll priority)
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Column {
     Calendar,
     Diary,
+    Git
 }
 
 /// Snap a time to the nearest 15-minute interval.
@@ -47,6 +48,8 @@ pub struct DiaryViewState {
     pub all_day_events: Vec<CalendarEvent>,
     /// Track if calendar refresh is in progress
     pub calendar_refreshing: bool,
+    /// Track if git commits are being loaded
+    pub git_refreshing: bool,
     /// Per-feed error messages (url -> error)
     pub feed_errors: HashMap<String, String>,
     /// Per-feed last refresh times (url -> timestamp)
@@ -56,6 +59,8 @@ pub struct DiaryViewState {
     pub scroll_offset: f32,
     /// Track which column is being hovered (for scroll priority)
     pub hovered_column: Option<Column>,
+    /// Git commits for the current date
+    pub git_commits: Vec<GitCommit>,
 }
 
 impl Default for DiaryViewState {
@@ -84,6 +89,8 @@ impl DiaryViewState {
             feed_last_refresh: HashMap::new(),
             scroll_offset: 0.0,
             hovered_column: None,
+            git_commits: Vec::new(),
+            git_refreshing: false,
         }
     }
 
