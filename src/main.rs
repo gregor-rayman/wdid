@@ -40,7 +40,6 @@ fn main() -> eframe::Result<()> {
             height: h,
         }
     };
-    let icon_data = icon.clone();
 
     // Build viewport with saved size
     let mut viewport = egui::ViewportBuilder::default()

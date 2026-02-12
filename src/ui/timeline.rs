@@ -154,9 +154,7 @@ pub fn render_timeline(
                         render_git_commits(
                             ui,
                             git_commits,
-                            state,
                             cache,
-                            &mut actions,
                             &git_tag_regex,
                         );
                     });
@@ -324,9 +322,7 @@ fn render_diary_entries(
 fn render_git_commits(
     ui: &mut Ui,
     entries: &[GitCommit],
-    state: &mut DiaryViewState,
     cache: &mut CommonMarkCache,
-    actions: &mut TimelineActions,
     git_tag_regex: &str,
 ) {
     if entries.is_empty() {
