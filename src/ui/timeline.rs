@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use egui::{ScrollArea, Ui};
+use egui::{Align, Layout, ScrollArea, Ui};
 use egui_commonmark::CommonMarkCache;
 
 use super::calendar_column::{render_all_day_events, render_calendar_events, CalendarAction};
@@ -53,11 +53,6 @@ pub fn render_timeline(
         return render_search_results(ui, entries, state, cache, &calendar_event_uids);
     }
 
-    // Normal mode: two-column layout with calendar and diary
-
-    // Render all-day events at the top (above both columns)
-    render_all_day_events(ui, all_day_events);
-
     // Check for completely empty state
     if entries.is_empty() && calendar_events.is_empty() && git_commits.is_empty() {
         ui.vertical_centered(|ui| {
@@ -72,104 +67,119 @@ pub fn render_timeline(
     // Two-column layout with synchronized scrolling
     let initial_offset = state.scroll_offset;
 
-    // Use columns for side-by-side layout
-    ui.columns(3, |columns| {
-        // Left column: Calendar events
-        let calendar_response = {
-            let ui = &mut columns[0];
+    // Three-column layout: 25% calendar, 50% diary, 25% git
+    let available_width = ui.available_width();
+    let spacing = ui.spacing().item_spacing.x;
+    let total_spacing = spacing * 2.0; // spacing between 3 columns
+    let usable_width = available_width - total_spacing;
+    let left_width = usable_width * 0.25;
+    let center_width = usable_width * 0.50;
+    let right_width = usable_width * 0.25;
+    let available_height = ui.available_height();
 
-            // Detect hover on this column
-            let column_rect = ui.available_rect_before_wrap();
-            if ui.rect_contains_pointer(column_rect) {
-                state.hovered_column = Some(Column::Calendar);
-            }
+    let mut calendar_offset = initial_offset;
+    let mut diary_offset = initial_offset;
+    let mut git_commit_offset = initial_offset;
 
-            ScrollArea::vertical()
-                .id_salt("calendar_scroll")
-                .auto_shrink([false, false])
-                .vertical_scroll_offset(initial_offset)
-                .show(ui, |ui| {
-                    let cal_action = render_calendar_events(ui, calendar_events);
-                    if !matches!(cal_action, CalendarAction::None) {
-                        actions.calendar_action = cal_action;
-                    }
-                })
-        };
-
-        // Right column: Diary entries
-        let diary_response = {
-            let ui = &mut columns[1];
-
-            // Detect hover on this column
-            let column_rect = ui.available_rect_before_wrap();
-            if ui.rect_contains_pointer(column_rect) {
-                state.hovered_column = Some(Column::Diary);
-            }
-
-            ScrollArea::vertical()
-                .id_salt("diary_scroll")
-                .auto_shrink([false, false])
-                .vertical_scroll_offset(initial_offset)
-                .show(ui, |ui| {
-                    render_diary_entries(
-                        ui,
-                        entries,
-                        state,
-                        cache,
-                        &mut actions,
-                        &calendar_event_uids,
-                    );
-                })
-        };
-
-        let git_commit_response = {
-            let ui = &mut columns[2];
-
-            // Detect hover on this column
-            let column_rect = ui.available_rect_before_wrap();
-            if ui.rect_contains_pointer(column_rect) {
-                state.hovered_column = Some(Column::Git);
-            }
-
-            ScrollArea::vertical()
-                .id_salt("git_scroll")
-                .auto_shrink([false, false])
-                .vertical_scroll_offset(initial_offset)
-                .show(ui, |ui| {
-                    render_git_commits(
-                        ui,
-                        git_commits,
-                        state,
-                        cache,
-                        &mut actions,
-                        &calendar_event_uids,
-                    );
-                })
-        };
-
-        // Synchronize scroll: use the offset from the hovered/active column
-        let calendar_offset = calendar_response.state.offset.y;
-        let diary_offset = diary_response.state.offset.y;
-        let git_commit_offset = git_commit_response.state.offset.y;
-
-        // Update shared scroll offset based on which column changed
-        let new_offset = match state.hovered_column {
-            Some(Column::Calendar) => calendar_offset,
-            Some(Column::Diary) => diary_offset,
-            Some(Column::Git) => git_commit_offset,
-            None => {
-                // No hover, use whichever changed
-                if (calendar_offset - initial_offset).abs() > 0.5 {
-                    calendar_offset
-                } else if (diary_offset - initial_offset).abs() > 0.5 {
-                    diary_offset
-                } else {
-                    initial_offset
+    ui.horizontal(|ui| {
+        // Left column: Calendar events (25%)
+        ui.allocate_ui_with_layout(
+            egui::vec2(left_width, available_height),
+            Layout::top_down(Align::Min),
+            |ui| {
+                let column_rect = ui.available_rect_before_wrap();
+                if ui.rect_contains_pointer(column_rect) {
+                    state.hovered_column = Some(Column::Calendar);
                 }
-            }
-        };
-        state.scroll_offset = new_offset;
+
+                let response = ScrollArea::vertical()
+                    .id_salt("calendar_scroll")
+                    .auto_shrink([false, false])
+                    .vertical_scroll_offset(initial_offset)
+                    .show(ui, |ui| {
+                        render_all_day_events(ui, all_day_events);
+                        let cal_action = render_calendar_events(ui, calendar_events);
+                        if !matches!(cal_action, CalendarAction::None) {
+                            actions.calendar_action = cal_action;
+                        }
+                    });
+                calendar_offset = response.state.offset.y;
+            },
+        );
+
+        // Center column: Diary entries (50%)
+        ui.allocate_ui_with_layout(
+            egui::vec2(center_width, available_height),
+            Layout::top_down(Align::Min),
+            |ui| {
+                let column_rect = ui.available_rect_before_wrap();
+                if ui.rect_contains_pointer(column_rect) {
+                    state.hovered_column = Some(Column::Diary);
+                }
+
+                let response = ScrollArea::vertical()
+                    .id_salt("diary_scroll")
+                    .auto_shrink([false, false])
+                    .vertical_scroll_offset(initial_offset)
+                    .show(ui, |ui| {
+                        render_diary_entries(
+                            ui,
+                            entries,
+                            state,
+                            cache,
+                            &mut actions,
+                            &calendar_event_uids,
+                        );
+                    });
+                diary_offset = response.state.offset.y;
+            },
+        );
+
+        // Right column: Git commits (25%)
+        ui.allocate_ui_with_layout(
+            egui::vec2(right_width, available_height),
+            Layout::top_down(Align::Min),
+            |ui| {
+                let column_rect = ui.available_rect_before_wrap();
+                if ui.rect_contains_pointer(column_rect) {
+                    state.hovered_column = Some(Column::Git);
+                }
+
+                let response = ScrollArea::vertical()
+                    .id_salt("git_scroll")
+                    .auto_shrink([false, false])
+                    .vertical_scroll_offset(initial_offset)
+                    .show(ui, |ui| {
+                        render_git_commits(
+                            ui,
+                            git_commits,
+                            state,
+                            cache,
+                            &mut actions,
+                            &calendar_event_uids,
+                        );
+                    });
+                git_commit_offset = response.state.offset.y;
+            },
+        );
     });
+
+    // Synchronize scroll: use the offset from the hovered/active column
+    let new_offset = match state.hovered_column {
+        Some(Column::Calendar) => calendar_offset,
+        Some(Column::Diary) => diary_offset,
+        Some(Column::Git) => git_commit_offset,
+        None => {
+            if (calendar_offset - initial_offset).abs() > 0.5 {
+                calendar_offset
+            } else if (diary_offset - initial_offset).abs() > 0.5 {
+                diary_offset
+            } else {
+                initial_offset
+            }
+        }
+    };
+    state.scroll_offset = new_offset;
 
     actions
 }

@@ -77,7 +77,7 @@ pub fn render_header(
                         .on_hover_text("Refreshing calendars...");
                 } else {
                     // Clickable refresh button
-                    let refresh_btn = ui.button("🗓");
+                    let refresh_btn = ui.button("📅");
                     if refresh_btn.clicked() {
                         action = HeaderAction::RefreshCalendars;
                     }
