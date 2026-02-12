@@ -675,6 +675,7 @@ impl eframe::App for WdidApp {
                     &mut self.view_state,
                     &mut self.markdown_cache,
                     is_search_mode,
+                    &self.config.git_tag_regex,
                 );
 
                 // Restore borrowed data

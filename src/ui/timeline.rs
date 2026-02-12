@@ -37,6 +37,7 @@ pub fn render_timeline(
     state: &mut DiaryViewState,
     cache: &mut CommonMarkCache,
     is_search_mode: bool,
+    git_tag_regex: &str,
 ) -> TimelineActions {
     //ui.ctx().set_pixels_per_point(2.0);
     let mut actions = TimelineActions::default();
@@ -156,7 +157,7 @@ pub fn render_timeline(
                             state,
                             cache,
                             &mut actions,
-                            &calendar_event_uids,
+                            &git_tag_regex,
                         );
                     });
                 git_commit_offset = response.state.offset.y;
@@ -326,7 +327,7 @@ fn render_git_commits(
     state: &mut DiaryViewState,
     cache: &mut CommonMarkCache,
     actions: &mut TimelineActions,
-    calendar_event_uids: &HashSet<String>,
+    git_tag_regex: &str,
 ) {
     if entries.is_empty() {
         ui.vertical_centered(|ui| {
@@ -336,6 +337,27 @@ fn render_git_commits(
         return;
     }
 
+    // Extract tags from git commit messages using the `git_tag_regex`. Display the unique tags from
+    // all commits in a row above the commit messages.
+    if !git_tag_regex.is_empty() {
+        if let Ok(re) = regex::Regex::new(git_tag_regex) {
+            let mut tags: Vec<String> = entries
+                .iter()
+                .flat_map(|e| re.find_iter(&e.description).map(|m| m.as_str().to_string()))
+                .collect();
+            tags.sort();
+            tags.dedup();
+
+            if !tags.is_empty() {
+                ui.horizontal_wrapped(|ui| {
+                    for tag in &tags {
+                        ui.label(egui::RichText::new(tag).strong());
+                    }
+                });
+                ui.add_space(4.0);
+            }
+        }
+    }
 
     for entry in entries {
         ui.add_space(4.0);

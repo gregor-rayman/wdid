@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=What Did I Do?
+Comment=Time tracking diary
+Exec=wdid
+Icon=wdid
+Terminal=false
+Type=Application
+Categories=Office;ProjectManagement;
+StartupWMClass=wdid
+

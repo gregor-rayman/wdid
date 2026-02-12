@@ -12,8 +12,8 @@ use app::WdidApp;
 use eframe::egui;
 use paths::AppPaths;
 
-/// Embedded tray icon (32x32 PNG).
-const TRAY_ICON: &[u8] = include_bytes!("../assets/icon.png");
+/// Embedded tray icon
+const TRAY_ICON: &[u8] = include_bytes!("../assets/icon-64.png");
 
 fn main() -> eframe::Result<()> {
     // Set up paths
@@ -28,10 +28,26 @@ fn main() -> eframe::Result<()> {
     let width = window_state.width.unwrap_or(800.0);
     let height = window_state.height.unwrap_or(600.0);
 
+    // Load application icon from embedded PNG
+    let icon = {
+        let img = image::load_from_memory(TRAY_ICON)
+            .expect("Failed to load icon")
+            .into_rgba8();
+        let (w, h) = img.dimensions();
+        egui::IconData {
+            rgba: img.into_raw(),
+            width: w,
+            height: h,
+        }
+    };
+    let icon_data = icon.clone();
+
     // Build viewport with saved size
     let mut viewport = egui::ViewportBuilder::default()
         .with_inner_size([width, height])
-        .with_min_inner_size([400.0, 300.0]);
+        .with_min_inner_size([400.0, 300.0])
+        .with_icon(icon)
+        .with_app_id("wdid");
 
     // Only set position on X11 (WAYLAND_DISPLAY not set)
     if std::env::var("WAYLAND_DISPLAY").is_err() {

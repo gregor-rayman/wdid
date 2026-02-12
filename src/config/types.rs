@@ -7,6 +7,7 @@ pub struct Config {
     pub theme: String,
     pub work_folders: Vec<String>,
     pub work_emails: Vec<String>,
+    pub git_tag_regex: String,
 }
 
 #[derive(Deserialize, Clone, Debug)]
