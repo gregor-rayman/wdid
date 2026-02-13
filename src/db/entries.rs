@@ -56,14 +56,6 @@ impl Database {
         Ok(entries)
     }
 
-    pub fn update_entry(&self, id: i64, content: &str) -> Result<()> {
-        self.conn().execute(
-            r#"UPDATE diary_entries SET content = ?1, updated_at = datetime('now') WHERE id = ?2"#,
-            params![content, id],
-        )?;
-        Ok(())
-    }
-
     /// Update an entry with content, start time, and optional duration.
     pub fn update_entry_full(
         &self,
@@ -123,7 +115,7 @@ impl Database {
     /// Link a diary entry to a calendar event.
     /// Stores the event UID and a snapshot of the event summary for display
     /// even if the original event is later deleted.
-    pub fn link_entry_to_event(
+    pub fn _link_entry_to_event(
         &self,
         entry_id: i64,
         event_uid: &str,

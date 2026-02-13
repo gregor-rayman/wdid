@@ -5,9 +5,6 @@ pub enum AppError {
     #[error("Database error: {0}")]
     Database(#[from] rusqlite::Error),
 
-    #[error("Configuration error: {0}")]
-    Config(String),
-
     #[error("Path error: {0}")]
     Path(String),
 

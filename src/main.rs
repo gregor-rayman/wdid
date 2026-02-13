@@ -8,6 +8,9 @@ mod paths;
 mod tray;
 mod ui;
 
+use std::sync::Arc;
+use std::sync::atomic::AtomicBool;
+
 use app::WdidApp;
 use eframe::egui;
 use paths::AppPaths;
@@ -19,6 +22,11 @@ fn main() -> eframe::Result<()> {
     // Set up paths
     let paths = AppPaths::new().expect("Could not determine app paths");
     paths.ensure_dirs().expect("Could not create app directories");
+
+    // Register SIGTERM handler
+    let sigterm_flag = Arc::new(AtomicBool::new(false));
+    signal_hook::flag::register(signal_hook::consts::SIGTERM, Arc::clone(&sigterm_flag))
+        .expect("Failed to register SIGTERM handler");
 
     // Spawn system tray (before creating window)
     let tray_rx = tray::spawn_tray(TRAY_ICON);
@@ -63,6 +71,6 @@ fn main() -> eframe::Result<()> {
     eframe::run_native(
         "What Did I Do?",
         options,
-        Box::new(move |cc| Ok(Box::new(WdidApp::new(cc, paths, tray_rx)))),
+        Box::new(move |cc| Ok(Box::new(WdidApp::new(cc, paths, tray_rx, sigterm_flag)))),
     )
 }

@@ -87,7 +87,7 @@ impl Database {
     }
 
     /// Get feed metadata by URL.
-    pub fn get_feed(&self, url: &str) -> Result<Option<CachedFeed>> {
+    pub fn _get_feed(&self, url: &str) -> Result<Option<CachedFeed>> {
         let mut stmt = self.conn().prepare_cached(
             r#"SELECT url, name, color, last_refresh, last_error
                FROM calendar_feeds WHERE url = ?1"#,

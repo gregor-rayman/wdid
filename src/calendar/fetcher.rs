@@ -13,8 +13,8 @@ use crate::config::CalendarFeed;
 pub enum CalendarCommand {
     /// Refresh all configured calendar feeds.
     RefreshAll(Vec<CalendarFeed>),
-    /// Refresh a single feed by URL.
-    RefreshOne(CalendarFeed),
+    // /// Refresh a single feed by URL.
+    // RefreshOne(CalendarFeed),
     /// Shutdown the worker thread.
     Shutdown,
 }
@@ -33,6 +33,8 @@ pub enum CalendarResult {
     FeedError { feed_url: String, error: String },
     /// All feeds in a RefreshAll batch have been processed.
     RefreshComplete,
+    /// Shutdown complete.
+    ShutdownComplete,
 }
 
 /// Spawns a background worker thread with a tokio runtime.
@@ -77,10 +79,11 @@ async fn worker_loop(cmd_rx: Receiver<CalendarCommand>, result_tx: Sender<Calend
                 }
                 let _ = result_tx.send(CalendarResult::RefreshComplete);
             }
-            Ok(CalendarCommand::RefreshOne(feed)) => {
-                fetch_and_send(&client, feed, &result_tx).await;
-            }
+            // Ok(CalendarCommand::RefreshOne(feed)) => {
+            //     fetch_and_send(&client, feed, &result_tx).await;
+            // }
             Ok(CalendarCommand::Shutdown) | Err(_) => {
+                let _ = result_tx.send(CalendarResult::ShutdownComplete);
                 // Channel closed or shutdown requested, exit loop
                 break;
             }

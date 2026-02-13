@@ -1,5 +1,7 @@
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{Receiver, Sender};
+use std::sync::Arc;
 use std::time::Instant;
 
 use chrono::{DateTime, Duration, Local};
@@ -9,10 +11,12 @@ use egui_commonmark::CommonMarkCache;
 
 use crate::calendar::{parse_ical, spawn_calendar_worker, CalendarCommand, CalendarResult};
 use crate::config::{Config, ConfigResult, WindowState};
-use crate::db::{CachedFeed, Database, DiaryEntry, NewDiaryEntry, spawn_git_worker, GitCommand, GitResult};
+use crate::db::{
+    spawn_git_worker, CachedFeed, Database, DiaryEntry, GitCommand, GitResult, NewDiaryEntry,
+};
 use crate::export::{
-    copy_to_clipboard, format_day_markdown, format_entries_json, format_standup,
-    format_weekly_retro, save_to_file, ExportAction,
+    copy_to_clipboard, format_day_markdown, format_entries_json, format_standup, format_weekly_retro,
+    save_to_file, ExportAction,
 };
 use crate::paths::AppPaths;
 use crate::tray::TrayCommand;
@@ -63,6 +67,12 @@ pub struct WdidApp {
     tray_rx: Receiver<TrayCommand>,
     git_rx: Receiver<GitResult>,
     git_tx: Sender<GitCommand>,
+    /// Flag set by SIGTERM signal handler
+    sigterm_flag: Arc<AtomicBool>,
+    /// Flag set by SIGTERM signal handler
+    calendar_shutdown: bool,
+    /// Flag set by SIGTERM signal handler
+    git_shutdown: bool,
 }
 
 impl WdidApp {
@@ -70,6 +80,7 @@ impl WdidApp {
         _cc: &eframe::CreationContext<'_>,
         paths: AppPaths,
         tray_rx: Receiver<TrayCommand>,
+        sigterm_flag: Arc<AtomicBool>,
     ) -> Self {
         // Load config
         let (config, config_warning, first_run) =
@@ -108,6 +119,27 @@ impl WdidApp {
             tray_rx,
             git_rx,
             git_tx,
+            sigterm_flag,
+            calendar_shutdown: false,
+            git_shutdown: false,
+        }
+    }
+
+    /// Send shutdown commands to worker threads and exit.
+    fn shutdown(&self, ctx: &egui::Context) {
+        let _ = self.calendar_tx.send(CalendarCommand::Shutdown);
+        let _ = self.git_tx.send(GitCommand::Shutdown);
+        // save_window_state_if_changed requires &mut self, but we call it before shutdown()
+        ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+        // Change the tray icon to gray to indicate shutdown
+        const GRAY_ICON: &[u8] = include_bytes!("../assets/icon-64-gray.png");
+        crate::tray::set_tray_icon(GRAY_ICON);
+    }
+
+    /// Quits if the background threads have shut down.
+    fn quit_if_shut_down(&mut self) {
+        if self.calendar_shutdown && self.git_shutdown {
+            std::process::exit(0);
         }
     }
 
@@ -312,10 +344,14 @@ impl WdidApp {
     fn trigger_git_refresh(&mut self) {
         if !self.view_state.git_refreshing {
             self.view_state.git_refreshing = true;
-            println!("Triggering git refresh for folders: {:?}", self.config.work_folders);
-            let _ = self
-                .git_tx
-                .send(GitCommand::RefreshAll(self.config.work_folders.clone(), self.config.work_emails.clone()));
+            println!(
+                "Triggering git refresh for folders: {:?}",
+                self.config.work_folders
+            );
+            let _ = self.git_tx.send(GitCommand::RefreshAll(
+                self.config.work_folders.clone(),
+                self.config.work_emails.clone(),
+            ));
         }
     }
 
@@ -402,7 +438,11 @@ impl WdidApp {
             }
             ExportAction::WeeklyRetroClipboard => {
                 // Get Monday of current week
-                let weekday = self.view_state.current_date.weekday().num_days_from_monday();
+                let weekday = self
+                    .view_state
+                    .current_date
+                    .weekday()
+                    .num_days_from_monday();
                 let monday = self
                     .view_state
                     .current_date
@@ -413,7 +453,10 @@ impl WdidApp {
                 // Query date range
                 let start = monday.format("%Y-%m-%d").to_string();
                 let end = sunday.format("%Y-%m-%d").to_string();
-                let week_entries = self.db.get_entries_for_date_range(&start, &end).unwrap_or_default();
+                let week_entries = self
+                    .db
+                    .get_entries_for_date_range(&start, &end)
+                    .unwrap_or_default();
 
                 let retro = format_weekly_retro(&week_entries, &monday);
                 if let Err(e) = copy_to_clipboard(&retro) {
@@ -445,6 +488,13 @@ impl eframe::App for WdidApp {
         // Store context for tray module to request repaints when window is hidden
         crate::tray::set_egui_context(ctx.clone());
         ctx.set_visuals(resolve_visuals(&self.config.theme));
+
+        // Check for SIGTERM signal
+        if self.sigterm_flag.load(Ordering::Relaxed) {
+            self.save_window_state_if_changed(ctx);
+            self.shutdown(ctx);
+            return;
+        }
 
         // Handle close-to-tray FIRST: hide window instead of quitting
         // Must be at the very start of update() to catch close_requested before it clears
@@ -507,9 +557,9 @@ impl eframe::App for WdidApp {
                     crate::tray::set_visible(false);
                 }
                 TrayCommand::Quit => {
-                    // Save window state before quitting
+                    // Save window state and shut down worker threads before quitting
                     self.save_window_state_if_changed(ctx);
-                    std::process::exit(0);
+                    self.shutdown(ctx);
                 }
             }
             ctx.request_repaint();
@@ -533,6 +583,11 @@ impl eframe::App for WdidApp {
                     eprintln!("Calendar refresh complete");
                     self.view_state.calendar_refreshing = false;
                 }
+                CalendarResult::ShutdownComplete => {
+                    eprintln!("Calendar worker shut down");
+                    self.calendar_shutdown = true;
+                    self.quit_if_shut_down();
+                }
             }
             ctx.request_repaint();
         }
@@ -542,7 +597,6 @@ impl eframe::App for WdidApp {
             let mut inserted: usize = 0;
             match result {
                 GitResult::CommitsFound(git_commits) => {
-
                     for commit in git_commits {
                         if let Err(e) = self.db.save_git_commit(&commit) {
                             eprintln!("Failed to save git commit: {}", e);
@@ -554,6 +608,11 @@ impl eframe::App for WdidApp {
                 GitResult::RefreshComplete => {
                     eprintln!("Git refresh complete");
                     self.view_state.git_refreshing = false;
+                }
+                GitResult::ShutdownComplete => {
+                    eprintln!("Git worker shut down");
+                    self.git_shutdown = true;
+                    self.quit_if_shut_down();
                 }
             }
             if inserted > 0 {
@@ -744,11 +803,8 @@ impl eframe::App for WdidApp {
                         self.view_state.edit_focus_set = false;
                     } else {
                         // Create a new entry linked to this event
-                        let snapshot = format!(
-                            "{}:{}",
-                            feed_color.as_deref().unwrap_or("#808080"),
-                            summary
-                        );
+                        let snapshot =
+                            format!("{}:{}", feed_color.as_deref().unwrap_or("#808080"), summary);
 
                         let date_str = self.view_state.current_date.format("%Y-%m-%d").to_string();
                         let new_entry = NewDiaryEntry {
@@ -779,4 +835,3 @@ impl eframe::App for WdidApp {
         }
     }
 }
-

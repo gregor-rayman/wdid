@@ -194,13 +194,13 @@ impl Database {
         Ok(git_commits)
     }
 
-    pub fn delete_git_commit(&self, id: String) -> Result<()> {
+    pub fn _delete_git_commit(&self, id: String) -> Result<()> {
         self.conn()
             .execute("DELETE FROM diary_entries WHERE id = ?1", [id])?;
         Ok(())
     }
 
-    pub fn search_git_entry(&self, text: &str) -> Result<Vec<GitCommit>> {
+    pub fn _search_git_entry(&self, text: &str) -> Result<Vec<GitCommit>> {
         let mut stmt = self.conn().prepare_cached(
             r#"SELECT id, date, time, folder, description
                FROM git_commits
@@ -223,6 +223,7 @@ pub enum GitCommand {
 pub enum GitResult {
     CommitsFound(Vec<GitCommit>),
     RefreshComplete,
+    ShutdownComplete,
 }
 
 impl GitCommit {
@@ -250,6 +251,7 @@ async fn worker_loop(cmd_rx: Receiver<GitCommand>, result_tx: Sender<GitResult>)
             }
             Ok(GitCommand::Shutdown) | Err(_) => {
                 // Channel closed or shutdown requested, exit loop
+                let _ = result_tx.send(GitResult::ShutdownComplete);
                 break;
             }
         }

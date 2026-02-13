@@ -1,7 +1,6 @@
 use egui::{Color32, Ui};
 use egui_commonmark::{CommonMarkCache, CommonMarkViewer};
 
-use super::state::DiaryViewState;
 use crate::db::GitCommit;
 
 /// Render a single git commit message.

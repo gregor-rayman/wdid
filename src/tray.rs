@@ -2,7 +2,7 @@
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{self, Receiver, Sender};
-use std::sync::OnceLock;
+use std::sync::{Mutex, OnceLock};
 
 use tray_icon::menu::{Menu, MenuEvent, MenuItem};
 use tray_icon::{Icon, TrayIcon, TrayIconBuilder, TrayIconEvent};
@@ -39,9 +39,19 @@ pub enum TrayCommand {
 /// Used by the tray click handler to toggle visibility.
 static VISIBLE: AtomicBool = AtomicBool::new(true);
 
+/// Pending icon data to be applied on the tray thread.
+static PENDING_ICON: Mutex<Option<Vec<u8>>> = Mutex::new(None);
+
 /// Set the visibility state (called from main app when visibility changes).
 pub fn set_visible(visible: bool) {
     VISIBLE.store(visible, Ordering::SeqCst);
+}
+
+/// Request a tray icon change. The icon bytes will be applied on the tray thread.
+pub fn set_tray_icon(icon_bytes: &[u8]) {
+    if let Ok(mut pending) = PENDING_ICON.lock() {
+        *pending = Some(icon_bytes.to_vec());
+    }
 }
 
 /// Spawn the system tray in a dedicated thread.
@@ -81,7 +91,7 @@ fn run_tray_loop(icon_data: Vec<u8>, tx: Sender<TrayCommand>) {
     let menu = build_menu();
 
     // Create the tray icon
-    let _tray: TrayIcon = match TrayIconBuilder::new()
+    let tray: TrayIcon = match TrayIconBuilder::new()
         .with_menu(Box::new(menu))
         .with_tooltip("wdid - What Did I Do")
         .with_icon(icon)
@@ -96,6 +106,23 @@ fn run_tray_loop(icon_data: Vec<u8>, tx: Sender<TrayCommand>) {
 
     // Set up event handlers
     setup_event_handlers(tx);
+
+    // Poll for pending icon changes on the GTK thread
+    #[cfg(target_os = "linux")]
+    {
+        gtk::glib::timeout_add_local(std::time::Duration::from_millis(200), move || {
+            if let Ok(mut pending) = PENDING_ICON.lock() {
+                if let Some(icon_data) = pending.take() {
+                    if let Some(new_icon) = load_icon(&icon_data) {
+                        if let Err(e) = tray.set_icon(Some(new_icon)) {
+                            eprintln!("Failed to update tray icon: {}", e);
+                        }
+                    }
+                }
+            }
+            gtk::glib::ControlFlow::Continue
+        });
+    }
 
     // Run the event loop
     #[cfg(target_os = "linux")]
