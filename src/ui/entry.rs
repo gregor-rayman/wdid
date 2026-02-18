@@ -74,19 +74,23 @@ fn render_edit_mode(ui: &mut Ui, state: &mut DiaryViewState, entry: &DiaryEntry)
 
     ui.horizontal(|ui| {
         ui.label("Time:");
-        time_response = Some(ui.add(
-            egui::TextEdit::singleline(&mut state.start_time_buffer)
-                .desired_width(50.0)
-                .hint_text("HH:MM"),
-        ));
+        time_response = Some(
+            ui.add(
+                egui::TextEdit::singleline(&mut state.start_time_buffer)
+                    .desired_width(50.0)
+                    .hint_text("HH:MM"),
+            ),
+        );
 
         ui.add_space(16.0);
         ui.label("Duration (min):");
-        duration_response = Some(ui.add(
-            egui::TextEdit::singleline(&mut state.duration_buffer)
-                .desired_width(40.0)
-                .hint_text("—"),
-        ));
+        duration_response = Some(
+            ui.add(
+                egui::TextEdit::singleline(&mut state.duration_buffer)
+                    .desired_width(40.0)
+                    .hint_text("—"),
+            ),
+        );
     });
 
     ui.add_space(4.0);
@@ -116,18 +120,31 @@ fn render_edit_mode(ui: &mut Ui, state: &mut DiaryViewState, entry: &DiaryEntry)
 
     if escape_pressed || clicked_outside {
         // Parse duration
-        let duration: Option<i32> = state
+        let duration: Option<i32> = if let Ok(duration_matches) = state
             .duration_buffer
-            .trim()
-            .parse()
-            .ok()
-            .filter(|&d: &i32| d > 0);
+            .split(':')
+            .map(|s| s.trim().parse::<i32>())
+            .collect::<Result<Vec<_>, _>>()
+        {
+            if duration_matches.len() >= 2 {
+                Some(duration_matches[0] * 60 + duration_matches[1])
+            } else if duration_matches.len() == 1 {
+                Some(duration_matches[0])
+            } else {
+                None
+            }
+        } else {
+            None
+        };
 
         // Use updated start_time or fall back to original
         let start_time = if state.start_time_buffer.trim().is_empty() {
             entry.start_time.clone()
         } else {
-            if let Ok(start) = chrono::NaiveTime::parse_from_str(&state.start_time_buffer.trim().to_string(), "%H:%M") {
+            if let Ok(start) = chrono::NaiveTime::parse_from_str(
+                &state.start_time_buffer.trim().to_string(),
+                "%H:%M",
+            ) {
                 start.format("%H:%M").to_string()
             } else {
                 entry.start_time.clone()
@@ -227,8 +244,15 @@ fn render_view_mode(
                             {
                                 let end = start + chrono::Duration::minutes(duration as i64);
                                 format!("⏱ {} - {}", entry.start_time, end.format("%H:%M"))
+                            } else if duration > 60 {
+                                format!(
+                                    "⏱ {} ({}h {}min)",
+                                    entry.start_time,
+                                    duration / 60,
+                                    duration % 60
+                                )
                             } else {
-                                format!("⏱ {} ({} min)", entry.start_time, duration)
+                                format!("⏱ {} ({}min)", entry.start_time, duration)
                             }
                         } else {
                             format!("⏱ {}", entry.start_time)
@@ -263,7 +287,11 @@ fn render_view_mode(
         state.editing_entry_id = Some(entry.id);
         state.edit_buffer = entry.content.clone();
         state.start_time_buffer = entry.start_time.clone();
-        state.duration_buffer = entry.duration.map(|d| d.to_string()).unwrap_or_default();
+        state.duration_buffer = match entry.duration {
+            Some(d) if d < 60 => d.to_string(),
+            Some(d) => format!("{}:{:02}", d / 60, d % 60),
+            None => String::new(),
+        };
         state.edit_focus_set = false;
     }
 
@@ -284,4 +312,3 @@ fn render_view_mode(
 
     action
 }
-

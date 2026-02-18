@@ -19,6 +19,11 @@ impl Database {
     /// Save a calendar event to the cache.
     /// Uses INSERT OR REPLACE to handle the UNIQUE constraint.
     pub fn save_calendar_event(&self, event: &CalendarEvent) -> Result<i64> {
+        let dtstart_date_str = event.dtstart_date.format("%Y-%m-%d").to_string();
+        let dtstart_time_str = event.dtstart_time.map(|t| t.format("%H:%M").to_string());
+        let dtend_date_str = event.dtend_date.map(|d| d.format("%Y-%m-%d").to_string());
+        let dtend_time_str = event.dtend_time.map(|t| t.format("%H:%M").to_string());
+
         self.conn().execute(
             r#"INSERT OR REPLACE INTO calendar_events
                (feed_url, event_uid, summary, dtstart_date, dtstart_time,
@@ -28,10 +33,10 @@ impl Database {
                 event.feed_url,
                 event.event_uid,
                 event.summary,
-                event.dtstart_date.format("%Y-%m-%d").to_string(),
-                event.dtstart_time.map(|t| t.format("%H:%M").to_string()),
-                event.dtend_date.map(|d| d.format("%Y-%m-%d").to_string()),
-                event.dtend_time.map(|t| t.format("%H:%M").to_string()),
+                dtstart_date_str,
+                dtstart_time_str,
+                dtend_date_str,
+                dtend_time_str,
                 event.all_day as i32,
                 event.rrule,
                 event.status.as_str(),
@@ -62,10 +67,12 @@ impl Database {
 
     /// Clear all cached events for a specific feed.
     /// Called before re-caching fresh data from a feed.
-    pub fn clear_feed_events(&self, feed_url: &str) -> Result<()> {
+    pub fn clear_feed_events(&self, feed_url: &str, range_start: &NaiveDate, range_end: &NaiveDate) -> Result<()> {
+        let range_start_str = range_start.format("%Y-%m-%d").to_string();
+        let range_end_str = range_end.format("%Y-%m-%d").to_string();
         self.conn().execute(
-            "DELETE FROM calendar_events WHERE feed_url = ?1",
-            [feed_url],
+            "DELETE FROM calendar_events WHERE feed_url = ?1 and dtstart_date >= ?2 and dtstart_date <= ?3",
+            [feed_url, &range_start_str, &range_end_str],
         )?;
         Ok(())
     }
@@ -80,6 +87,18 @@ impl Database {
                 feed.name,
                 feed.color,
                 feed.last_refresh,
+                feed.last_error,
+            ],
+        )?;
+        Ok(())
+    }
+
+    pub fn save_feed_error(&self, feed: &CachedFeed) -> Result<()> {
+        self.conn().execute(
+            r#"INSERT OR REPLACE INTO calendar_feeds (url, last_error)
+               VALUES (?1, ?2)"#,
+            params![
+                feed.url,
                 feed.last_error,
             ],
         )?;

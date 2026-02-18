@@ -126,11 +126,11 @@ impl WdidApp {
     }
 
     /// Send shutdown commands to worker threads and exit.
-    fn shutdown(&self, ctx: &egui::Context) {
+    fn shutdown(&self) {
         let _ = self.calendar_tx.send(CalendarCommand::Shutdown);
         let _ = self.git_tx.send(GitCommand::Shutdown);
         // save_window_state_if_changed requires &mut self, but we call it before shutdown()
-        ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+        // ctx.send_viewport_cmd(egui::ViewportCommand::Close);
         // Change the tray icon to gray to indicate shutdown
         const GRAY_ICON: &[u8] = include_bytes!("../assets/icon-64-gray.png");
         crate::tray::set_tray_icon(GRAY_ICON);
@@ -262,7 +262,7 @@ impl WdidApp {
                 );
 
                 // Clear old events for this feed
-                if let Err(e) = self.db.clear_feed_events(feed_url) {
+                if let Err(e) = self.db.clear_feed_events(feed_url, &range_start, &range_end) {
                     eprintln!("Failed to clear old events for {}: {}", feed_url, e);
                 }
 
@@ -323,7 +323,7 @@ impl WdidApp {
             last_refresh: None, // Don't update refresh time on error
             last_error: Some(error.to_string()),
         };
-        if let Err(e) = self.db.save_feed(&feed) {
+        if let Err(e) = self.db.save_feed_error(&feed) {
             eprintln!("Failed to save feed error: {}", e);
         }
 
@@ -491,8 +491,9 @@ impl eframe::App for WdidApp {
 
         // Check for SIGTERM signal
         if self.sigterm_flag.load(Ordering::Relaxed) {
+            println!("SIGTERM received, shutting down...");
             self.save_window_state_if_changed(ctx);
-            self.shutdown(ctx);
+            self.shutdown();
             return;
         }
 
@@ -500,16 +501,10 @@ impl eframe::App for WdidApp {
         // Must be at the very start of update() to catch close_requested before it clears
         if ctx.input(|i| i.viewport().close_requested()) {
             ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
-            // On Wayland, Visible(false) is a no-op, use Minimized instead
-            if is_wayland() {
-                ctx.send_viewport_cmd(egui::ViewportCommand::Minimized(true));
-            } else {
-                ctx.send_viewport_cmd(egui::ViewportCommand::Visible(false));
-            }
-            crate::tray::set_visible(false);
-            // Save window state before hiding
+            println!("Close requested, shutting down...");
+
             self.save_window_state_if_changed(ctx);
-            // Don't process rest of update when hiding to ensure viewport commands complete
+            self.shutdown();
             return;
         }
 
@@ -559,7 +554,7 @@ impl eframe::App for WdidApp {
                 TrayCommand::Quit => {
                     // Save window state and shut down worker threads before quitting
                     self.save_window_state_if_changed(ctx);
-                    self.shutdown(ctx);
+                    self.shutdown();
                 }
             }
             ctx.request_repaint();
@@ -798,8 +793,11 @@ impl eframe::App for WdidApp {
                         self.view_state.editing_entry_id = Some(entry.id);
                         self.view_state.edit_buffer = entry.content.clone();
                         self.view_state.start_time_buffer = entry.start_time.clone();
-                        self.view_state.duration_buffer =
-                            entry.duration.map(|d| d.to_string()).unwrap_or_default();
+                        self.view_state.duration_buffer = match entry.duration {
+                            Some(d) if d < 60 => d.to_string(),
+                            Some(d) => format!("{}:{:02}", d / 60, d % 60),
+                            None => String::new(),
+                        };
                         self.view_state.edit_focus_set = false;
                     } else {
                         // Create a new entry linked to this event
