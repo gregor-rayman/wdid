@@ -72,7 +72,7 @@ impl CalendarEvent {
                 }
                 .unwrap();
 
-                let start_str = if (self.dtstart_date == *for_date) {
+                let start_str = if self.dtstart_date == *for_date {
                     format!("{}", start.format("%H:%M").to_string())
                 } else if starts_at_midnight {
                     format!("{}", self.dtstart_date.format("%b %d"))
@@ -82,7 +82,7 @@ impl CalendarEvent {
 
                 let end_str = if (end_date == *for_date) && ends_at_midnight {
                     format!("{}", "24:00")
-                } else if (end_date == *for_date) {
+                } else if end_date == *for_date {
                     format!("{}", end.format("%H:%M").to_string())
                 } else if ends_at_midnight {
                     format!("{}", end_date.format("%b %d"))
