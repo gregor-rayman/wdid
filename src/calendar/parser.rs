@@ -71,7 +71,15 @@ pub fn parse_ical(
                 range_end,
             )?;
 
+            // Get EXDATEs
+            let exdates = get_exdates(component);
+
             for occurrence_date in occurrences {
+                // Skip if EXDATE
+
+                if exdates.contains(&occurrence_date) {
+                    continue;
+                }
                 events.push(CalendarEvent {
                     id: None,
                     feed_url: feed_url.to_string(),
@@ -326,6 +334,21 @@ fn get_rrule_string(component: &ICalendarComponent) -> Option<String> {
             None
         }
     })
+}
+
+fn get_exdates(component: &ICalendarComponent) -> Vec<NaiveDate> {
+    let exdates = component.properties(&ICalendarProperty::Exdate);
+    let mut result: Vec<NaiveDate> = Vec::new();
+    for exdate in exdates {
+        for value in &exdate.values {
+            if let ICalendarValue::PartialDateTime(pdt) = value {
+                if let (Some(year), Some(month), Some(day)) = (pdt.year, pdt.month, pdt.day) {
+                    result.push(NaiveDate::from_ymd_opt(year as i32, month as u32, day as u32).unwrap());
+                }
+            }
+        }
+    }
+    result
 }
 
 /// Expand RRULE to get occurrence dates within range
