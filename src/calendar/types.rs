@@ -1,4 +1,4 @@
-use chrono::{NaiveDate, NaiveTime};
+use chrono::{Days, NaiveDate, NaiveTime};
 
 /// Participation status for a calendar event.
 ///
@@ -41,11 +41,11 @@ impl EventStatus {
 /// A calendar event (either from cache or freshly parsed)
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct CalendarEvent {
-    pub id: Option<i64>,            // DB id, None if not yet saved
+    pub id: Option<i64>, // DB id, None if not yet saved
     pub feed_url: String,
-    pub event_uid: String,          // iCal UID
+    pub event_uid: String, // iCal UID
     pub summary: String,
-    pub dtstart_date: NaiveDate,    // Date portion
+    pub dtstart_date: NaiveDate,         // Date portion
     pub dtstart_time: Option<NaiveTime>, // None for all-day
     pub dtend_date: Option<NaiveDate>,
     pub dtend_time: Option<NaiveTime>,
@@ -58,18 +58,53 @@ pub struct CalendarEvent {
 
 impl CalendarEvent {
     /// Format display time range (e.g., "9:00-13:00" or "All day")
-    pub fn time_display(&self) -> String {
+    pub fn time_display(&self, for_date: &NaiveDate) -> String {
         if self.all_day {
             "All day".to_string()
         } else if let Some(start) = self.dtstart_time {
             if let Some(end) = self.dtend_time {
-                format!("{} - {}", start.format("%H:%M"), end.format("%H:%M"))
+                let starts_at_midnight = start == NaiveTime::from_hms_opt(0, 0, 0).unwrap();
+                let ends_at_midnight = end == NaiveTime::from_hms_opt(0, 0, 0).unwrap();
+                let end_date = if ends_at_midnight {
+                    self.dtend_date.unwrap().checked_sub_days(Days::new(1))
+                } else {
+                    self.dtend_date
+                }
+                .unwrap();
+
+                let start_str = if (self.dtstart_date == *for_date) {
+                    format!("{}", start.format("%H:%M").to_string())
+                } else if starts_at_midnight {
+                    format!("{}", self.dtstart_date.format("%b %d"))
+                } else {
+                    format!("{} {}", self.dtstart_date.format("%b %d"), start.format("%H:%M"))
+                };
+
+                let end_str = if (end_date == *for_date) && ends_at_midnight {
+                    format!("{}", "24:00")
+                } else if (end_date == *for_date) {
+                    format!("{}", end.format("%H:%M").to_string())
+                } else if ends_at_midnight {
+                    format!("{}", end_date.format("%b %d"))
+                } else {
+                    format!("{} {}", end_date.format("%b %d"), end.format("%H:%M"))
+                };
+
+                format!("{} - {}", start_str, end_str)
+
             } else {
-                start.format("%H:%M").to_string()
+                if self.dtstart_date == *for_date {
+                    start.format("%H:%M").to_string()
+                } else {
+                    format!(
+                        "{} {}",
+                        self.dtstart_date.format("%b %d"),
+                        start.format("%H:%M")
+                    )
+                }
             }
         } else {
             String::new()
         }
     }
 }
-

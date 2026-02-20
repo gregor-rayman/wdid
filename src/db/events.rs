@@ -54,7 +54,7 @@ impl Database {
                       e.all_day, e.rrule, e.status, f.name, f.color
                FROM calendar_events e
                LEFT JOIN calendar_feeds f ON e.feed_url = f.url
-               WHERE e.dtstart_date = ?1
+               WHERE e.dtstart_date <= ?1 AND (e.dtend_date > ?1 or e.dtend_date = ?1 and e.dtend_time > '00:00')
                ORDER BY e.all_day DESC, e.dtstart_time"#,
         )?;
 

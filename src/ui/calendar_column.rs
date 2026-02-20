@@ -1,6 +1,6 @@
 //! Calendar column rendering for the two-column timeline layout.
 
-use chrono::Timelike;
+use chrono::{NaiveDate, Timelike};
 use egui::{Color32, CornerRadius, Frame, RichText, Stroke, Ui, Vec2};
 
 use crate::calendar::{CalendarEvent, EventStatus};
@@ -92,7 +92,7 @@ fn render_all_day_chip(ui: &mut Ui, event: &CalendarEvent, color: Color32) {
 ///
 /// Each event shows time range and summary with a color-coded left border.
 /// Returns a `CalendarAction` if user interaction requires one.
-pub fn render_calendar_events(ui: &mut Ui, events: &[CalendarEvent]) -> CalendarAction {
+pub fn render_calendar_events(ui: &mut Ui, events: &[CalendarEvent], for_date: &NaiveDate) -> CalendarAction {
     let mut action = CalendarAction::None;
 
     if events.is_empty() {
@@ -104,7 +104,7 @@ pub fn render_calendar_events(ui: &mut Ui, events: &[CalendarEvent]) -> Calendar
     }
 
     for event in events {
-        let event_action = render_event_card(ui, event);
+        let event_action = render_event_card(ui, event, for_date);
         if !matches!(event_action, CalendarAction::None) {
             action = event_action;
         }
@@ -116,10 +116,10 @@ pub fn render_calendar_events(ui: &mut Ui, events: &[CalendarEvent]) -> Calendar
 
 /// Render a single calendar event card with color-coded left border.
 /// Returns a `CalendarAction` if user clicks the 'add note' button.
-fn render_event_card(ui: &mut Ui, event: &CalendarEvent) -> CalendarAction {
+fn render_event_card(ui: &mut Ui, event: &CalendarEvent, for_date: &NaiveDate) -> CalendarAction {
     let mut action = CalendarAction::None;
     let color = parse_color(event.feed_color.as_deref());
-    let time_display = event.time_display();
+    let time_display = event.time_display(for_date);
 
     // Determine if event should be muted based on status
     let is_declined = event.status == EventStatus::Declined;

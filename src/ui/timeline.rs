@@ -99,7 +99,7 @@ pub fn render_timeline(
                     .vertical_scroll_offset(initial_offset)
                     .show(ui, |ui| {
                         render_all_day_events(ui, all_day_events);
-                        let cal_action = render_calendar_events(ui, calendar_events);
+                        let cal_action = render_calendar_events(ui, calendar_events, &state.current_date);
                         if !matches!(cal_action, CalendarAction::None) {
                             actions.calendar_action = cal_action;
                         }
