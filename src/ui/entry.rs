@@ -232,7 +232,11 @@ fn render_view_mode(
                         ui.label(
                             egui::RichText::new("⚠ Event no longer exists")
                                 .small()
-                                .color(Color32::YELLOW),
+                                .color(if ui.style().visuals.dark_mode {
+                                    Color32::YELLOW
+                                } else {
+                                    Color32::BROWN
+                                }),
                         );
                     }
 
